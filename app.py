@@ -66,6 +66,162 @@ def login():
 
     return render_template('login.html')
 
+@app.route('/products')
+def products():
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("SELECT id, name, description, price, stock FROM products")
+    rows = cur.fetchall()
+
+    cur.close()
+    conn.close()
+
+    products_list = []
+    for row in rows:
+        products_list.append({
+            "id": row[0],
+            "name": row[1],
+            "description": row[2],
+            "price": row[3],
+            "stock": row[4]
+        })
+
+    return render_template('products.html', products=products_list)
+
+@app.route('/admin/products')
+def admin_products():
+    if 'user_id' not in session or session.get('role') != 'admin':
+        return redirect(url_for('login'))
+
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT id, name, price, stock FROM products")
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+
+    products = []
+    for r in rows:
+        products.append({
+            "id": r[0],
+            "name": r[1],
+            "price": r[2],
+            "stock": r[3]
+        })
+
+    return render_template('admin_products.html', products=products)
+
+@app.route('/admin/products/add', methods=['GET', 'POST'])
+def add_product():
+    if 'user_id' not in session or session.get('role') != 'admin':
+        return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        name = request.form['name']
+        price = request.form['price']
+        stock = request.form['stock']
+        desc = request.form['description']
+
+        conn = get_connection()
+        cur = conn.cursor()
+        cur.execute(
+            "INSERT INTO products (name, price, stock, description) VALUES (%s, %s, %s, %s)",
+            (name, price, stock, desc)
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        return redirect(url_for('admin_products'))
+
+    return render_template('add_product.html')
+
+@app.route('/admin/products/edit/<int:product_id>', methods=['GET', 'POST'])
+def edit_product(product_id):
+    if 'user_id' not in session or session.get('role') != 'admin':
+        return redirect(url_for('login'))
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    if request.method == 'POST':
+        cur.execute(
+            "UPDATE products SET name=%s, price=%s, stock=%s WHERE id=%s",
+            (request.form['name'], request.form['price'], request.form['stock'], product_id)
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+        return redirect(url_for('admin_products'))
+
+    cur.execute("SELECT id, name, price, stock FROM products WHERE id=%s", (product_id,))
+    p = cur.fetchone()
+    cur.close()
+    conn.close()
+
+    return render_template('edit_product.html', p=p)
+
+@app.route('/admin/products/delete/<int:product_id>')
+def delete_product(product_id):
+    if 'user_id' not in session or session.get('role') != 'admin':
+        return redirect(url_for('login'))
+
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM products WHERE id=%s", (product_id,))
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    return redirect(url_for('admin_products'))
+
+
+@app.route('/add-to-cart/<int:product_id>')
+def add_to_cart(product_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT id, name, price FROM products WHERE id=%s", (product_id,))
+    product = cur.fetchone()
+    cur.close()
+    conn.close()
+
+    if not product:
+        return redirect(url_for('products'))
+
+    cart = session.get('cart', {})
+
+    pid = str(product[0])
+    if pid in cart:
+        cart[pid]['quantity'] += 1
+    else:
+        cart[pid] = {
+            'name': product[1],
+            'price': float(product[2]),
+            'quantity': 1
+        }
+
+    session['cart'] = cart
+    return redirect(url_for('view_cart'))
+
+@app.route('/cart')
+def view_cart():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    return render_template('cart.html', cart=session.get('cart', {}))
+
+@app.route('/remove-from-cart/<product_id>')
+def remove_from_cart(product_id):
+    cart = session.get('cart', {})
+    cart.pop(product_id, None)
+    session['cart'] = cart
+    return redirect(url_for('view_cart'))
+
+
 @app.route('/logout')
 def logout():
     session.clear()

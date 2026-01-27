@@ -3,26 +3,74 @@
 {% block title %}Login{% endblock %}
 
 {% block content %}
+
 <div class="row justify-content-center">
   <div class="col-md-4">
-    <h3 class="text-center mb-3">Login</h3>
 
-    <form method="post">
+    <h3 class="text-center mb-4">Login</h3>
+
+    <form method="post" onsubmit="return validateLogin()">
+
+      <!-- Email -->
       <div class="mb-3">
-        <label>Email</label>
-        <input type="email" name="email" class="form-control" required>
+        <label class="form-label">Email Address</label>
+        <input type="email" class="form-control" id="email" name="email" required>
+        <small class="text-danger d-none" id="emailError">
+          Please enter a valid email
+        </small>
       </div>
 
+      <!-- Password -->
       <div class="mb-3">
-        <label>Password</label>
-        <input type="password" name="password" class="form-control" required>
+        <label class="form-label">Password</label>
+        <input type="password" class="form-control" id="password" name="password" required>
+        <small class="text-danger d-none" id="passwordError">
+          Password cannot be empty
+        </small>
       </div>
 
-      <button class="btn btn-dark w-100">Login</button>
+      <!-- Submit -->
+      <button type="submit" class="btn btn-dark w-100">
+        Login
+      </button>
+
     </form>
+
     <p class="text-center mt-3">
-        New user? <a href="{{ url_for('register') }}">Register here</a>
+      Don’t have an account?
+      <a href="{{ url_for('register') }}">Register</a>
     </p>
+
   </div>
 </div>
+
+<!-- JavaScript -->
+<script>
+function validateLogin() {
+
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value.trim();
+
+  let valid = true;
+
+  // Reset errors
+  document.getElementById("emailError").classList.add("d-none");
+  document.getElementById("passwordError").classList.add("d-none");
+
+  // Email validation
+  if (!email || !email.includes("@")) {
+    document.getElementById("emailError").classList.remove("d-none");
+    valid = false;
+  }
+
+  // Password validation
+  if (!password) {
+    document.getElementById("passwordError").classList.remove("d-none");
+    valid = false;
+  }
+
+  return valid; // true → submit to Flask, false → stop submission
+}
+</script>
+
 {% endblock %}
