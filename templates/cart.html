@@ -24,8 +24,16 @@
       <td>{{ item.quantity }}</td>
       <td>₹ {{ total }}</td>
       <td>
-        <a href="{{ url_for('remove_from_cart', product_id=pid) }}"
-           class="btn btn-danger btn-sm">Remove</a>
+        <script src="{{ url_for('static', filename='js/cart.js') }}"></script>
+
+<button onclick="updateQty('{{ pid }}', 1)">+</button>
+<button onclick="updateQty('{{ pid }}', -1)">−</button>
+
+<button onclick="removeItem('{{ pid }}')"
+        class="btn btn-danger btn-sm">
+  Remove
+</button>
+
       </td>
     </tr>
   {% endfor %}
