@@ -221,6 +221,54 @@ def remove_from_cart(product_id):
     session['cart'] = cart
     return redirect(url_for('view_cart'))
 
+@app.route('/checkout', methods=['GET', 'POST'])
+def checkout():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    cart = session.get('cart')
+    if not cart:
+        return redirect(url_for('products'))
+
+    if request.method == 'POST':
+        user_id = session['user_id']
+        total = sum(item['price'] * item['quantity'] for item in cart.values())
+
+        conn = get_connection()
+        cur = conn.cursor()
+
+        # Insert order
+        cur.execute(
+            "INSERT INTO orders (user_id, total_amount) VALUES (%s, %s) RETURNING id",
+            (user_id, total)
+        )
+        order_id = cur.fetchone()[0]
+
+        # Insert order items
+        for item in cart.values():
+            cur.execute(
+                "INSERT INTO order_items (order_id, product_name, price, quantity) VALUES (%s, %s, %s, %s)",
+                (order_id, item['name'], item['price'], item['quantity'])
+            )
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        # Clear cart
+        session.pop('cart', None)
+
+        return redirect(url_for('order_success', order_id=order_id))
+
+    return render_template('checkout.html', cart=cart)
+
+@app.route('/order-success/<int:order_id>')
+def order_success(order_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    return render_template('order_success.html', order_id=order_id)
+
 
 @app.route('/logout')
 def logout():
