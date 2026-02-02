@@ -1,0 +1,23 @@
+/* Admin Panel Specific Styles */
+
+.admin-card {
+    margin-bottom: 20px;
+}
+
+.admin-table {
+    font-size: 0.9rem;
+}
+
+.status-badge {
+    min-width: 80px;
+}
+
+.action-buttons .btn {
+    margin-right: 5px;
+}
+
+.chart-container {
+    position: relative;
+    height: 300px;
+    margin-bottom: 30px;
+}

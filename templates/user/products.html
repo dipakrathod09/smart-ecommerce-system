@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+
+{% block title %}Products - Smart E-Commerce{% endblock %}
+
+{% block content %}
+<h1 class="mb-4"><i class="fas fa-shopping-bag"></i> Our Products</h1>
+
+<div class="row">
+    <!-- Filter Sidebar -->
+    <div class="col-md-3">
+        <div class="card mb-3">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-filter"></i> Filters</h5>
+            </div>
+            <div class="card-body">
+                <!-- Categories -->
+                <h6>Categories</h6>
+                <div class="list-group mb-3">
+                    <a href="{{ url_for('product.list_products') }}" 
+                       class="list-group-item list-group-item-action {% if not selected_category %}active{% endif %}">
+                        All Products
+                    </a>
+                    {% for category in categories %}
+                    <a href="{{ url_for('product.list_products', category=category.id) }}" 
+                       class="list-group-item list-group-item-action {% if selected_category == category.id %}active{% endif %}">
+                        {{ category.name }}
+                    </a>
+                    {% endfor %}
+                </div>
+                
+                <!-- Price Filter -->
+                <h6>Price Range</h6>
+                <form method="GET" action="{{ url_for('product.list_products') }}">
+                    {% if selected_category %}
+                    <input type="hidden" name="category" value="{{ selected_category }}">
+                    {% endif %}
+                    <div class="input-group input-group-sm mb-2">
+                        <span class="input-group-text">₹</span>
+                        <input type="number" class="form-control" name="min_price" placeholder="Min">
+                    </div>
+                    <div class="input-group input-group-sm mb-2">
+                        <span class="input-group-text">₹</span>
+                        <input type="number" class="form-control" name="max_price" placeholder="Max">
+                    </div>
+                    <button type="submit" class="btn btn-sm btn-primary w-100">Apply</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Products Grid -->
+    <div class="col-md-9">
+        <!-- Search Bar -->
+        <form method="GET" action="{{ url_for('product.list_products') }}" class="mb-3">
+            <div class="input-group">
+                <input type="text" class="form-control" name="search" 
+                       placeholder="Search products..." value="{{ search_term or '' }}">
+                <button class="btn btn-primary" type="submit">
+                    <i class="fas fa-search"></i> Search
+                </button>
+            </div>
+        </form>
+        
+        <!-- Sort Options -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <p class="text-muted mb-0">Showing {{ products|length }} products</p>
+            <div>
+                <select class="form-select form-select-sm" onchange="window.location.href=this.value">
+                    <option value="{{ url_for('product.list_products', sort_by='created_at') }}">Latest</option>
+                    <option value="{{ url_for('product.list_products', sort_by='price', sort_order='ASC') }}">Price: Low to High</option>
+                    <option value="{{ url_for('product.list_products', sort_by='price', sort_order='DESC') }}">Price: High to Low</option>
+                    <option value="{{ url_for('product.list_products', sort_by='name') }}">Name</option>
+                </select>
+            </div>
+        </div>
+        
+        <!-- Products Grid -->
+        {% if products %}
+        <div class="row g-3">
+            {% for product in products %}
+            <div class="col-lg-4 col-md-6">
+                <div class="card h-100 shadow-sm">
+                    <img src="{{ product.image_url or url_for('static', filename='images/placeholder.jpg') }}" 
+                         class="card-img-top" alt="{{ product.name }}" style="height: 200px; object-fit: cover;">
+                    <div class="card-body">
+                        <span class="badge bg-secondary mb-2">{{ product.category_name }}</span>
+                        <h6 class="card-title">{{ product.name }}</h6>
+                        <p class="card-text text-muted small">
+                            {{ product.description[:80] }}{% if product.description|length > 80 %}...{% endif %}
+                        </p>
+                        <h5 class="text-primary">₹{{ "%.2f"|format(product.price) }}</h5>
+                        {% if product.stock > 0 %}
+                        <span class="badge bg-success">In Stock: {{ product.stock }}</span>
+                        {% else %}
+                        <span class="badge bg-danger">Out of Stock</span>
+                        {% endif %}
+                    </div>
+                    <div class="card-footer bg-white">
+                        <a href="{{ url_for('product.product_detail', product_id=product.id) }}" 
+                           class="btn btn-primary btn-sm w-100">
+                            <i class="fas fa-eye"></i> View Details
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Pagination -->
+        {% if total_pages > 1 %}
+        <nav aria-label="Product pagination" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% for page_num in range(1, total_pages + 1) %}
+                <li class="page-item {% if page_num == current_page %}active{% endif %}">
+                    <a class="page-link" href="{{ url_for('product.list_products', page=page_num, category=selected_category, search=search_term) }}">
+                        {{ page_num }}
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </nav>
+        {% endif %}
+        
+        {% else %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i> No products found matching your criteria.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

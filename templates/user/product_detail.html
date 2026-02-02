@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}{{ product.name }}{% endblock %}
+{% block content %}
+<div class="row">
+    <div class="col-md-6">
+        <img src="{{ product.image_url or url_for('static', filename='images/placeholder.jpg') }}" 
+             class="img-fluid rounded" alt="{{ product.name }}">
+    </div>
+    <div class="col-md-6">
+        <span class="badge bg-secondary">{{ product.category_name }}</span>
+        <h2 class="mt-2">{{ product.name }}</h2>
+        <h3 class="text-primary">₹{{ "%.2f"|format(product.price) }}</h3>
+        <p class="lead">{{ product.description }}</p>
+        {% if product.brand %}<p><strong>Brand:</strong> {{ product.brand }}</p>{% endif %}
+        <p><strong>Stock:</strong> 
+            {% if product.stock > 0 %}
+                <span class="badge bg-success">{{ product.stock }} available</span>
+            {% else %}
+                <span class="badge bg-danger">Out of Stock</span>
+            {% endif %}
+        </p>
+        {% if product.stock > 0 %}
+        <form method="POST" action="{{ url_for('cart.add_to_cart', product_id=product.id) }}">
+            <div class="input-group mb-3" style="max-width: 200px;">
+                <span class="input-group-text">Qty</span>
+                <input type="number" class="form-control" name="quantity" value="1" min="1" max="{{ product.stock }}">
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg">
+                <i class="fas fa-cart-plus"></i> Add to Cart
+            </button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Smart E-Commerce{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="mb-4"><i class="fas fa-tachometer-alt"></i> Welcome, {{ user_info.user_name }}!</h2>
+    </div>
+</div>
+
+<!-- Quick Stats -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <h6 class="text-uppercase">Recent Orders</h6>
+                <h2>{{ recent_orders|length }}</h2>
+                <a href="{{ url_for('order.order_history') }}" class="text-white">View All <i class="fas fa-arrow-right"></i></a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <h6 class="text-uppercase">Cart Items</h6>
+                <h2>{{ cart_count }}</h2>
+                <a href="{{ url_for('cart.view_cart') }}" class="text-white">View Cart <i class="fas fa-arrow-right"></i></a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <h6 class="text-uppercase">Profile</h6>
+                <p class="mb-0">{{ user_info.user_email }}</p>
+                <a href="{{ url_for('user.profile') }}" class="text-white">Edit Profile <i class="fas fa-arrow-right"></i></a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recommended Products -->
+{% if recommendations %}
+<section class="mb-5">
+    <h3 class="mb-3"><i class="fas fa-magic"></i> Recommended For You</h3>
+    <div class="row g-3">
+        {% for product in recommendations %}
+        <div class="col-lg-3 col-md-4 col-sm-6">
+            <div class="card h-100 shadow-sm">
+                <img src="{{ product.image_url or url_for('static', filename='images/placeholder.jpg') }}" 
+                     class="card-img-top" alt="{{ product.name }}" style="height: 180px; object-fit: cover;">
+                <div class="card-body">
+                    <h6 class="card-title">{{ product.name }}</h6>
+                    <p class="text-muted small">{{ product.category_name }}</p>
+                    <h5 class="text-primary">₹{{ "%.2f"|format(product.price) }}</h5>
+                    <a href="{{ url_for('product.product_detail', product_id=product.id) }}" 
+                       class="btn btn-primary btn-sm w-100">View Details</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<!-- Recent Orders -->
+{% if recent_orders %}
+<section>
+    <h3 class="mb-3"><i class="fas fa-receipt"></i> Recent Orders</h3>
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th>Order Number</th>
+                    <th>Date</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Payment</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in recent_orders %}
+                <tr>
+                    <td><strong>{{ order.order_number }}</strong></td>
+                    <td>{{ order.ordered_at.strftime('%d %b %Y') }}</td>
+                    <td>₹{{ "%.2f"|format(order.total_amount) }}</td>
+                    <td><span class="badge bg-info">{{ order.order_status }}</span></td>
+                    <td>
+                        {% if order.payment_status == 'Success' %}
+                        <span class="badge bg-success">Paid</span>
+                        {% else %}
+                        <span class="badge bg-warning">{{ order.payment_status or 'Pending' }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('order.order_detail', order_id=order.id) }}" 
+                           class="btn btn-sm btn-outline-primary">View</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% else %}
+<div class="alert alert-info">
+    <i class="fas fa-info-circle"></i> You haven't placed any orders yet. 
+    <a href="{{ url_for('product.list_products') }}">Start shopping now!</a>
+</div>
+{% endif %}
+{% endblock %}

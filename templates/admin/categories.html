@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block title %}Manage Categories{% endblock %}
+{% block content %}
+<h2>Manage Categories</h2>
+<button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+    <i class="fas fa-plus"></i> Add Category
+</button>
+<table class="table">
+    <thead><tr><th>Name</th><th>Description</th><th>Active</th><th>Actions</th></tr></thead>
+    <tbody>
+        {% for category in categories %}
+        <tr>
+            <td>{{ category.name }}</td>
+            <td>{{ category.description }}</td>
+            <td>{% if category.is_active %}<span class="badge bg-success">Yes</span>{% else %}<span class="badge bg-danger">No</span>{% endif %}</td>
+            <td><button class="btn btn-sm btn-warning">Edit</button></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block title %}Payment Method{% endblock %}
+{% block content %}
+<h2>Select Payment Method</h2>
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <form method="POST">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="radio" name="payment_method" value="COD" id="cod" checked>
+                        <label class="form-check-label" for="cod">
+                            <i class="fas fa-money-bill"></i> Cash on Delivery
+                        </label>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="radio" name="payment_method" value="Card" id="card">
+                        <label class="form-check-label" for="card">
+                            <i class="fas fa-credit-card"></i> Credit/Debit Card
+                        </label>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="radio" name="payment_method" value="UPI" id="upi">
+                        <label class="form-check-label" for="upi">
+                            <i class="fas fa-mobile-alt"></i> UPI
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg w-100">Continue</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

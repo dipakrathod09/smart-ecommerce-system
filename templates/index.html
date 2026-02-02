@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+
+{% block title %}Home - Smart E-Commerce System{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="p-5 mb-4 bg-light rounded-3">
+    <div class="container-fluid py-5">
+        <h1 class="display-4 fw-bold">Welcome to Smart E-Commerce!</h1>
+        <p class="col-md-8 fs-4">Discover amazing products with our intelligent recommendation system. Shop with confidence and enjoy seamless shopping experience.</p>
+        <a class="btn btn-primary btn-lg" href="{{ url_for('product.list_products') }}" role="button">
+            <i class="fas fa-shopping-bag"></i> Start Shopping
+        </a>
+        {% if not user_info.logged_in %}
+        <a class="btn btn-outline-primary btn-lg ms-2" href="{{ url_for('auth.register') }}" role="button">
+            <i class="fas fa-user-plus"></i> Create Account
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Categories Section -->
+<section class="mb-5">
+    <h2 class="mb-4"><i class="fas fa-th-large"></i> Shop by Category</h2>
+    <div class="row g-4">
+        {% for category in categories %}
+        <div class="col-md-3 col-sm-6">
+            <div class="card h-100 text-center shadow-sm hover-card">
+                <div class="card-body">
+                    <div class="mb-3">
+                        <i class="fas fa-box fa-3x text-primary"></i>
+                    </div>
+                    <h5 class="card-title">{{ category.name }}</h5>
+                    <p class="card-text text-muted small">{{ category.description or 'Browse products' }}</p>
+                    <a href="{{ url_for('product.list_products', category=category.id) }}" 
+                       class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-arrow-right"></i> Browse
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- Featured Products Section -->
+<section class="mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-star"></i> Featured Products</h2>
+        <a href="{{ url_for('product.list_products') }}" class="btn btn-sm btn-outline-primary">
+            View All <i class="fas fa-arrow-right"></i>
+        </a>
+    </div>
+    
+    <div class="row g-4">
+        {% for product in featured_products %}
+        <div class="col-lg-3 col-md-4 col-sm-6">
+            <div class="card h-100 shadow-sm hover-card">
+                <img src="{{ product.image_url or url_for('static', filename='images/placeholder.jpg') }}" 
+                     class="card-img-top product-image" alt="{{ product.name }}"
+                     style="height: 200px; object-fit: cover;">
+                <div class="card-body d-flex flex-column">
+                    <span class="badge bg-secondary mb-2 align-self-start">{{ product.category_name }}</span>
+                    <h6 class="card-title">{{ product.name }}</h6>
+                    <p class="card-text text-muted small flex-grow-1">
+                        {{ product.description[:80] }}{% if product.description|length > 80 %}...{% endif %}
+                    </p>
+                    <div class="d-flex justify-content-between align-items-center mt-auto">
+                        <h5 class="text-primary mb-0">₹{{ "%.2f"|format(product.price) }}</h5>
+                        {% if product.stock > 0 %}
+                        <span class="badge bg-success">In Stock</span>
+                        {% else %}
+                        <span class="badge bg-danger">Out of Stock</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-footer bg-white">
+                    <a href="{{ url_for('product.product_detail', product_id=product.id) }}" 
+                       class="btn btn-primary btn-sm w-100">
+                        <i class="fas fa-eye"></i> View Details
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- Popular Products (if user is logged in) -->
+{% if user_info.logged_in and popular_products %}
+<section class="mb-5">
+    <h2 class="mb-4"><i class="fas fa-fire"></i> Popular Products</h2>
+    <div class="row g-4">
+        {% for product in popular_products %}
+        <div class="col-lg-3 col-md-4 col-sm-6">
+            <div class="card h-100 shadow-sm hover-card">
+                <img src="{{ product.image_url or url_for('static', filename='images/placeholder.jpg') }}" 
+                     class="card-img-top product-image" alt="{{ product.name }}"
+                     style="height: 200px; object-fit: cover;">
+                <div class="card-body">
+                    <h6 class="card-title">{{ product.name }}</h6>
+                    <h5 class="text-primary">₹{{ "%.2f"|format(product.price) }}</h5>
+                    <a href="{{ url_for('product.product_detail', product_id=product.id) }}" 
+                       class="btn btn-primary btn-sm w-100">
+                        View Details
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<!-- Features Section -->
+<section class="mb-5">
+    <div class="row g-4 text-center">
+        <div class="col-md-3">
+            <div class="p-4">
+                <i class="fas fa-shipping-fast fa-3x text-primary mb-3"></i>
+                <h5>Free Shipping</h5>
+                <p class="text-muted">On all orders</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="p-4">
+                <i class="fas fa-shield-alt fa-3x text-success mb-3"></i>
+                <h5>Secure Payment</h5>
+                <p class="text-muted">100% secure transactions</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="p-4">
+                <i class="fas fa-undo fa-3x text-warning mb-3"></i>
+                <h5>Easy Returns</h5>
+                <p class="text-muted">30-day return policy</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="p-4">
+                <i class="fas fa-headset fa-3x text-info mb-3"></i>
+                <h5>24/7 Support</h5>
+                <p class="text-muted">Dedicated customer service</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+.hover-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.hover-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.product-image {
+    transition: transform 0.3s;
+}
+
+.card:hover .product-image {
+    transform: scale(1.05);
+}
+</style>
+{% endblock %}
