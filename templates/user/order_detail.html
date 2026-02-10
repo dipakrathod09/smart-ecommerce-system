@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block title %}Order Details{% endblock %}
+{% block content %}
+<h2>Order #{{ order.order_number }}</h2>
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-3">
+            <div class="card-body">
+                <p><strong>Status:</strong> <span class="badge bg-info">{{ order.order_status }}</span></p>
+                <p><strong>Ordered On:</strong> {{ order.ordered_at.strftime('%d %b %Y, %I:%M %p') }}</p>
+                <p><strong>Shipping:</strong> {{ order.shipping_address }}, {{ order.shipping_city }}, {{ order.shipping_state }} - {{ order.shipping_pincode }}</p>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header"><h5>Order Items</h5></div>
+            <div class="card-body">
+                <table class="table">
+                    <thead><tr><th>Product</th><th>Price</th><th>Quantity</th><th>Subtotal</th></tr></thead>
+                    <tbody>
+                        {% for item in order_items %}
+                        <tr>
+                            <td>{{ item.product_name }}</td>
+                            <td>₹{{ "%.2f"|format(item.product_price) }}</td>
+                            <td>{{ item.quantity }}</td>
+                            <td>₹{{ "%.2f"|format(item.subtotal) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header"><h5>Payment Info</h5></div>
+            <div class="card-body">
+                {% if payment %}
+                <p><strong>Method:</strong> {{ payment.payment_method }}</p>
+                <p><strong>Transaction ID:</strong> {{ payment.transaction_id }}</p>
+                <p><strong>Status:</strong> 
+                    {% if payment.payment_status == 'Success' %}<span class="badge bg-success">{{ payment.payment_status }}</span>
+                    {% else %}<span class="badge bg-warning">{{ payment.payment_status }}</span>{% endif %}
+                </p>
+                {% endif %}
+                <hr>
+                <h4>Total: ₹{{ "%.2f"|format(order.total_amount) }}</h4>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

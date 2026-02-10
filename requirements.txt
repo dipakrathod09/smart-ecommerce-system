@@ -1,0 +1,31 @@
+# Smart E-Commerce System - Python Dependencies
+# Install using: pip install -r requirements.txt
+
+# Web Framework
+Flask==3.0.0
+Werkzeug==3.0.1
+
+# Database
+psycopg2-binary==2.9.9
+
+# Password Hashing
+bcrypt==4.1.2
+
+# Forms and Validation
+Flask-WTF==1.2.1
+WTForms==3.1.1
+
+# Environment Variables
+python-dotenv==1.0.0
+
+# Date and Time
+python-dateutil==2.8.2
+
+# File Upload
+Pillow==10.2.0
+
+# Development
+flask-debugtoolbar==0.14.1
+
+# Production Server (optional)
+gunicorn==21.2.0

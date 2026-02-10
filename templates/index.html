@@ -1,0 +1,230 @@
+{% extends 'base.html' %}
+
+{% block title %}Home - SmartStore{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="hero-section text-center text-lg-start">
+    <div class="container hero-content">
+        <div class="row align-items-center">
+            <div class="col-lg-7">
+                <h1 class="display-3 fw-bold mb-4 animate-slide-up">Next Gen <br>Shopping Experience</h1>
+                <p class="lead mb-5 animate-slide-up" style="animation-delay: 0.1s; opacity: 0.9;">
+                    Discover curated products with our AI-powered recommendation engine.
+                    Quality meets intelligence in every purchase.
+                </p>
+                <div class="d-flex gap-3 justify-content-center justify-content-lg-start animate-slide-up"
+                    style="animation-delay: 0.2s;">
+                    <a class="btn btn-light text-primary btn-lg px-5 shadow-lg"
+                        href="{{ url_for('product.list_products') }}">
+                        <i class="fas fa-shopping-bag me-2"></i> Shop Now
+                    </a>
+                    {% if not user_info.logged_in %}
+                    <a class="btn btn-outline-light btn-lg px-5" href="{{ url_for('auth.register') }}">
+                        Join Us
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-lg-5 d-none d-lg-block text-center animate-slide-up" style="animation-delay: 0.3s;">
+                <i class="fas fa-rocket fa-10x text-white-50"
+                    style="filter: drop-shadow(0 10px 20px rgba(0,0,0,0.2));"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Categories Section -->
+<section class="mb-5">
+    <div class="d-flex justify-content-between align-items-end mb-4">
+        <div>
+            <h6 class="text-uppercase text-primary fw-bold letter-spacing-2">Collections</h6>
+            <h2 class="fw-bold">Shop by Category</h2>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        {% for category in categories %}
+        <div class="col-md-3 col-sm-6">
+            <a href="{{ url_for('product.list_products', category=category.id) }}" class="text-decoration-none">
+                <div class="card h-100 text-center hover-card p-4 border-0">
+                    <div class="card-body">
+                        <div class="mb-4">
+                            <div class="icon-shape bg-light text-primary rounded-circle mx-auto d-flex align-items-center justify-content-center"
+                                style="width: 80px; height: 80px;">
+                                <i class="fas fa-tag fa-2x"></i>
+                            </div>
+                        </div>
+                        <h5 class="card-title text-dark">{{ category.name }}</h5>
+                        <p class="card-text text-muted small">{{ category.description or 'Explore collection' }}</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- Featured Products Section -->
+<section class="mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h6 class="text-uppercase text-danger fw-bold letter-spacing-2">Generative AI</h6>
+            <h2 class="fw-bold">Featured Products</h2>
+        </div>
+        <a href="{{ url_for('product.list_products') }}" class="btn btn-outline-primary rounded-pill">
+            View All <i class="fas fa-arrow-right ms-2"></i>
+        </a>
+    </div>
+
+    <div class="row g-4">
+        {% for product in featured_products %}
+        <div class="col-lg-3 col-md-4 col-sm-6">
+            <div class="card h-100 border-0">
+                <div class="position-relative">
+                    <img src="{{ product.image_url or url_for('static', filename='images/placeholder.jpg') }}"
+                        class="card-img-top product-image rounded-top" alt="{{ product.name }}">
+                    <span class="badge bg-white text-dark position-absolute top-0 start-0 m-3 shadow-sm">
+                        {{ product.category_name }}
+                    </span>
+                    {% if product.stock == 0 %}
+                    <div class="position-absolute top-0 end-0 m-3">
+                        <span class="badge bg-danger shadow-sm">Out of Stock</span>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="card-body d-flex flex-column">
+                    <h6 class="card-title mb-1 text-truncate">{{ product.name }}</h6>
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="text-warning small">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star-half-alt"></i>
+                        </div>
+                        <span class="text-muted small ms-2">(4.5)</span>
+                    </div>
+
+                    <p class="card-text text-muted small flex-grow-1">
+                        {{ product.description[:60] }}{% if product.description|length > 60 %}...{% endif %}
+                    </p>
+
+                    <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                        <h5 class="text-primary mb-0 fw-bold">₹{{ "%.2f"|format(product.price) }}</h5>
+                        <div class="d-flex gap-2">
+                            {% if user_info.logged_in %}
+                            <form
+                                action="{{ url_for('wishlist.add_to_wishlist' if product.id not in wishlist_product_ids else 'wishlist.remove_from_wishlist', product_id=product.id) }}"
+                                method="POST" class="d-inline">
+                                <button type="submit"
+                                    class="btn-wishlist {% if product.id in wishlist_product_ids %}active{% endif %}"
+                                    title="Add to Wishlist">
+                                    <i class="fas fa-heart"></i>
+                                </button>
+                            </form>
+                            {% endif %}
+                            <a href="{{ url_for('product.product_detail', product_id=product.id) }}"
+                                class="btn btn-sm btn-light text-primary rounded-circle shadow-sm"
+                                style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- Popular Products (if user is logged in) -->
+{% if user_info.logged_in and popular_products %}
+<section class="mb-5">
+    <h2 class="fw-bold mb-4">Recommended for You <i class="fas fa-magic text-primary"></i></h2>
+    <div class="row g-4">
+        {% for product in popular_products %}
+        <div class="col-lg-3 col-md-4 col-sm-6">
+            <div class="card h-100 border-0">
+                <img src="{{ product.image_url or url_for('static', filename='images/placeholder.jpg') }}"
+                    class="card-img-top product-image" alt="{{ product.name }}">
+                <div class="card-body">
+                    <h6 class="card-title text-truncate">{{ product.name }}</h6>
+                    <h5 class="text-primary fw-bold">₹{{ "%.2f"|format(product.price) }}</h5>
+                    <a href="{{ url_for('product.product_detail', product_id=product.id) }}"
+                        class="btn btn-outline-primary btn-sm w-100 mt-2">
+                        View Details
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<!-- Features Section -->
+<section class="mb-5">
+    <div class="row g-4 justify-content-center">
+        <div class="col-md-3">
+            <div class="p-4 bg-white rounded-4 shadow-sm text-center h-100">
+                <div class="mb-3 text-primary">
+                    <i class="fas fa-shipping-fast fa-3x"></i>
+                </div>
+                <h6 class="fw-bold">Free Shipping</h6>
+                <p class="text-muted small mb-0">On all orders over ₹500</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="p-4 bg-white rounded-4 shadow-sm text-center h-100">
+                <div class="mb-3 text-success">
+                    <i class="fas fa-shield-alt fa-3x"></i>
+                </div>
+                <h6 class="fw-bold">Secure Payment</h6>
+                <p class="text-muted small mb-0">100% secure transactions</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="p-4 bg-white rounded-4 shadow-sm text-center h-100">
+                <div class="mb-3 text-warning">
+                    <i class="fas fa-undo fa-3x"></i>
+                </div>
+                <h6 class="fw-bold">Easy Returns</h6>
+                <p class="text-muted small mb-0">30-day return policy</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="p-4 bg-white rounded-4 shadow-sm text-center h-100">
+                <div class="mb-3 text-info">
+                    <i class="fas fa-headset fa-3x"></i>
+                </div>
+                <h6 class="fw-bold">24/7 Support</h6>
+                <p class="text-muted small mb-0">Dedicated customer service</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    .icon-shape {
+        transition: all 0.3s ease;
+    }
+
+    .hover-card:hover .icon-shape {
+        transform: scale(1.1);
+        background-color: var(--primary-color) !important;
+        color: white !important;
+    }
+
+    .letter-spacing-2 {
+        letter-spacing: 2px;
+    }
+
+    .animate-slide-up {
+        animation: fadeInUp 0.8s ease-out forwards;
+        opacity: 0;
+        transform: translateY(20px);
+    }
+</style>
+{% endblock %}

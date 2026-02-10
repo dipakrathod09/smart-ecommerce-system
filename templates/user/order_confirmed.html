@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}Order Confirmed - Smart E-Commerce{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 text-center">
+        <div class="card shadow-lg">
+            <div class="card-body p-5">
+                <i class="fas fa-check-circle text-success" style="font-size: 64px;"></i>
+                <h1 class="mt-4 mb-3">Order Placed Successfully!</h1>
+                <p class="lead">Thank you for your purchase. Your order has been confirmed.</p>
+
+                <div class="alert alert-info my-4">
+                    <h5>Order Number: <strong>{{ order.order_number }}</strong></h5>
+                    {% if payment %}
+                    <p class="mb-0">Transaction ID: {{ payment.transaction_id }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="mt-4">
+                    <a href="{{ url_for('order.order_detail', order_id=order.id) }}"
+                        class="btn btn-primary btn-lg me-2">
+                        <i class="fas fa-eye"></i> View Order
+                    </a>
+                    <a href="{{ url_for('product.list_products') }}" class="btn btn-outline-primary btn-lg">
+                        <i class="fas fa-shopping-bag"></i> Continue Shopping
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

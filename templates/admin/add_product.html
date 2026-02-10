@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block title %}Add Product{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white border-0 pt-4 pb-0">
+                <h4 class="mb-0"><i class="fas fa-plus-circle text-primary"></i> Add New Product</h4>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST" action="{{ url_for('admin.manage_products') }}" enctype="multipart/form-data">
+                    <input type="hidden" name="action" value="add">
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Category</label>
+                            <select name="category_id" class="form-select" required>
+                                {% for category in categories %}
+                                <option value="{{ category.id }}">{{ category.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Brand (Optional)</label>
+                            <input type="text" name="brand" class="form-control" placeholder="e.g., Nike, Samsung">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Product Name</label>
+                        <input type="text" name="name" class="form-control" required placeholder="Enter product name">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Description</label>
+                        <textarea name="description" class="form-control" rows="4" required
+                            placeholder="Detailed product description..."></textarea>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Price (₹)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">₹</span>
+                                <input type="number" step="0.01" name="price" class="form-control" required
+                                    placeholder="0.00">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Stock</label>
+                            <input type="number" name="stock" class="form-control" required placeholder="0">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Product Image</label>
+                            <input type="file" name="image" class="form-control" accept="image/*">
+                            <div class="form-text small">Formats: JPG, PNG, WEBP</div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('admin.manage_products') }}" class="btn btn-light">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4"><i class="fas fa-save me-2"></i> Save
+                            Product</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

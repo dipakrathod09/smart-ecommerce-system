@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% block title %}Edit Product{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white border-0 pt-4 pb-0">
+                <h4 class="mb-0"><i class="fas fa-edit text-primary"></i> Edit Product</h4>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST" action="{{ url_for('admin.manage_products') }}" enctype="multipart/form-data">
+                    <input type="hidden" name="action" value="edit">
+                    <input type="hidden" name="product_id" value="{{ product.id }}">
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Category</label>
+                            <select name="category_id" class="form-select" required>
+                                {% for category in categories %}
+                                <option value="{{ category.id }}" {% if category.id==product.category_id %}selected{%
+                                    endif %}>
+                                    {{ category.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Brand</label>
+                            <input type="text" name="brand" class="form-control" value="{{ product.brand or '' }}">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Product Name</label>
+                        <input type="text" name="name" class="form-control" value="{{ product.name }}" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Description</label>
+                        <textarea name="description" class="form-control" rows="4"
+                            required>{{ product.description }}</textarea>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Price (₹)</label>
+                            <input type="number" step="0.01" name="price" class="form-control"
+                                value="{{ product.price }}" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Stock</label>
+                            <input type="number" name="stock" class="form-control" value="{{ product.stock }}" required>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check pt-4">
+                                <input class="form-check-input" type="checkbox" name="is_active" id="activeCheck" {% if
+                                    product.is_active %}checked{% endif %}>
+                                <label class="form-check-label" for="activeCheck">
+                                    Active (Visible)
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Product Image</label>
+                        <div class="d-flex align-items-center mb-2">
+                            {% if product.image_url %}
+                            <div class="me-3">
+                                <img src="{{ product.image_url }}" class="rounded" width="60" height="60"
+                                    style="object-fit: cover;">
+                            </div>
+                            {% endif %}
+                            <div class="flex-grow-1">
+                                <input type="file" name="image" class="form-control" accept="image/*">
+                                <div class="form-text small">Upload new image to replace current one. Formats: JPG, PNG,
+                                    WEBP</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('admin.manage_products') }}" class="btn btn-light">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4"><i class="fas fa-save me-2"></i> Update
+                            Product</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

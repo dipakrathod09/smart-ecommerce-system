@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}Analytics{% endblock %}
+{% block extra_css %}<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>{% endblock %}
+{% block content %}
+<h2>Analytics Dashboard</h2>
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header"><h5>Daily Sales</h5></div>
+            <div class="card-body"><canvas id="dailySalesChart"></canvas></div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header"><h5>Category Sales</h5></div>
+            <div class="card-body"><canvas id="categoryChart"></canvas></div>
+        </div>
+    </div>
+</div>
+<div class="card">
+    <div class="card-header"><h5>Best Selling Products</h5></div>
+    <div class="card-body">
+        <table class="table">
+            <thead><tr><th>Product</th><th>Category</th><th>Quantity Sold</th><th>Revenue</th></tr></thead>
+            <tbody>
+                {% for product in best_products %}
+                <tr>
+                    <td>{{ product.name }}</td>
+                    <td>{{ product.category_name }}</td>
+                    <td>{{ product.total_quantity }}</td>
+                    <td>₹{{ "%.2f"|format(product.total_revenue) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+// Charts would go here using Chart.js with data from backend
+</script>
+{% endblock %}

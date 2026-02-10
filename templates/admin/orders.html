@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block title %}Manage Orders{% endblock %}
+{% block content %}
+<h2>Manage Orders</h2>
+<table class="table">
+    <thead><tr><th>Order #</th><th>Customer</th><th>Amount</th><th>Status</th><th>Payment</th><th>Actions</th></tr></thead>
+    <tbody>
+        {% for order in orders %}
+        <tr>
+            <td>{{ order.order_number }}</td>
+            <td>{{ order.customer_name }}</td>
+            <td>₹{{ "%.2f"|format(order.total_amount) }}</td>
+            <td>
+                <form method="POST" action="{{ url_for('admin.update_order_status', order_id=order.id) }}" class="d-inline">
+                    <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <option value="Pending" {% if order.order_status == 'Pending' %}selected{% endif %}>Pending</option>
+                        <option value="Confirmed" {% if order.order_status == 'Confirmed' %}selected{% endif %}>Confirmed</option>
+                        <option value="Processing" {% if order.order_status == 'Processing' %}selected{% endif %}>Processing</option>
+                        <option value="Shipped" {% if order.order_status == 'Shipped' %}selected{% endif %}>Shipped</option>
+                        <option value="Delivered" {% if order.order_status == 'Delivered' %}selected{% endif %}>Delivered</option>
+                    </select>
+                </form>
+            </td>
+            <td><span class="badge bg-{{ 'success' if order.payment_status == 'Success' else 'warning' }}">{{ order.payment_status or 'Pending' }}</span></td>
+            <td><a href="{{ url_for('order.order_detail', order_id=order.id) }}" class="btn btn-sm btn-info">View</a></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
