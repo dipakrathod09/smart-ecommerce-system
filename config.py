@@ -31,7 +31,7 @@ class Config:
     DB_PORT = '5432'
     DB_NAME = 'smart_ecommerce_db'
     DB_USER = 'postgres'
-    DB_PASSWORD = os.environ.get('DB_PASSWORD', 'Admin@123')  # Set DB_PASSWORD env var in production!
+    DB_PASSWORD = os.environ.get('DB_PASSWORD', '1234')  # Set DB_PASSWORD env var in production!
     
     # Connection pool settings
     DB_MIN_CONN = 1
