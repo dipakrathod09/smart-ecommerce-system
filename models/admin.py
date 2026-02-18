@@ -68,10 +68,10 @@ class Admin:
             query = """
                 SELECT id, username, password_hash, email, full_name, is_super_admin
                 FROM admin
-                WHERE username = %s
+                WHERE username = %s OR email = %s
             """
             
-            admin = execute_dict_query(query, (username,), fetch_one=True)
+            admin = execute_dict_query(query, (username, username), fetch_one=True)
             
             if not admin:
                 logger.warning(f"Admin login failed: User not found - {username}")

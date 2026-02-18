@@ -89,9 +89,28 @@ def login():
                 if next_page:
                     return redirect(next_page)
                 return redirect(url_for('user.dashboard'))
-            else:
-                flash('Invalid email or password.', 'danger')
-                return render_template('auth/login.html')
+
+            
+            # If user login failed, try ADMIN login
+            # Admin.login now checks username OR email
+            admin = Admin.login(email, password)
+            
+            if admin:
+                # Set session variables for admin
+                session.clear()  # Clear any existing session
+                session['admin_id'] = admin['id']
+                session['admin_name'] = admin['full_name'] or admin['username']
+                session['admin_username'] = admin['username']
+                session['is_admin'] = True
+                session['is_super_admin'] = admin.get('is_super_admin', False)
+                session.permanent = True
+                
+                flash(f'Welcome Admin, {admin["username"]}!', 'success')
+                return redirect(url_for('admin.dashboard'))
+                
+            # If both fail
+            flash('Invalid email or password.', 'danger')
+            return render_template('auth/login.html')
         except Exception as e:
             flash(f'Login failed: {str(e)}', 'danger')
             return render_template('auth/login.html')
