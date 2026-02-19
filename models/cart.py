@@ -184,3 +184,22 @@ class Cart:
         except Exception as e:
             logger.error(f"Error clearing cart: {e}")
             return False
+
+    @staticmethod
+    def delete_by_product(product_id):
+        """
+        Remove a product from all carts (before delete)
+        
+        Args:
+            product_id (int): Product ID
+            
+        Returns:
+            bool: True if successful
+        """
+        try:
+            query = "DELETE FROM cart WHERE product_id = %s"
+            execute_query(query, (product_id,), commit=True)
+            return True
+        except Exception as e:
+            logger.error(f"Error removing product {product_id} from carts: {e}")
+            return False

@@ -101,3 +101,22 @@ class Review:
         """
         query = "SELECT * FROM reviews WHERE user_id = %s AND product_id = %s"
         return execute_dict_query(query, (user_id, product_id), fetch_one=True)
+
+    @staticmethod
+    def delete_by_product(product_id):
+        """
+        Delete all reviews for a product
+        
+        Args:
+            product_id (int): Product ID
+            
+        Returns:
+            bool: True if successful
+        """
+        try:
+            query = "DELETE FROM reviews WHERE product_id = %s"
+            execute_query(query, (product_id,), commit=True)
+            return True
+        except Exception as e:
+            logger.error(f"Error deleting reviews for product {product_id}: {str(e)}")
+            return False

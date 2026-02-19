@@ -13,13 +13,11 @@ from services.order_service import OrderService
 from models.user import User
 from models.analytics import Analytics
 from utils.decorators import admin_required
+from utils.helpers import allowed_file
 
 admin_bp = Blueprint('admin', __name__)
 
-def allowed_file(filename):
-    """Check if file extension is allowed"""
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in current_app.config['ALLOWED_EXTENSIONS']
+
 
 
 @admin_bp.route('/dashboard')
@@ -74,6 +72,17 @@ def manage_categories():
     return render_template('admin/categories.html', categories=categories)
 
 
+@admin_bp.route('/categories/delete/<int:category_id>', methods=['POST'])
+@admin_required
+def delete_category(category_id):
+    """Delete (soft delete) category"""
+    if Category.delete(category_id):
+        flash('Category deleted successfully.', 'success')
+    else:
+        flash('Failed to delete category.', 'danger')
+    return redirect(url_for('admin.manage_categories'))
+
+
 @admin_bp.route('/products', methods=['GET', 'POST'])
 @admin_required
 def manage_products():
@@ -87,7 +96,7 @@ def manage_products():
         image_url = None
         if 'image' in request.files:
             file = request.files['image']
-            if file and file.filename != '' and allowed_file(file.filename):
+            if file and file.filename != '' and allowed_file(file.filename, current_app.config['ALLOWED_EXTENSIONS']):
                 filename = secure_filename(file.filename)
                 import time # Import locally to avoid cluttering top level if not needed elsewhere
                 filename = f"{int(time.time())}_{filename}"
@@ -136,13 +145,26 @@ def manage_products():
         
         return redirect(url_for('admin.manage_products'))
     
-    products = ProductService.get_products(page=page, per_page=20)
+    products = ProductService.get_products(page=page, per_page=20, include_inactive=True)
     categories = Category.get_all_active_categories()
     
     return render_template('admin/products.html',
                          products=products,
                          categories=categories,
                          current_page=page)
+
+
+@admin_bp.route('/products/delete/<int:product_id>', methods=['POST'])
+@admin_required
+def delete_product(product_id):
+    """Delete (hard delete) product"""
+    if ProductService.delete_product(product_id):
+        flash('Product permanently deleted.', 'success')
+    else:
+        # Failure usually means it's part of an order
+        flash('Failed to delete product. It may be part of existing orders.', 'danger')
+    return redirect(url_for('admin.manage_products'))
+
 
 
 @admin_bp.route('/products/add')

@@ -74,7 +74,8 @@ class Product:
     
     @staticmethod
     def get_all(page=1, per_page=12, category_id=None, search_term=None, 
-                min_price=None, max_price=None, sort_by='created_at', sort_order='DESC'):
+                min_price=None, max_price=None, sort_by='created_at', sort_order='DESC',
+                include_inactive=False):
         """
         Get all products with filtering, search, and pagination
         
@@ -87,6 +88,7 @@ class Product:
             max_price (float): Maximum price filter (optional)
             sort_by (str): Sort column (name, price, created_at)
             sort_order (str): ASC or DESC
+            include_inactive (bool): If True, returns both active and inactive products
             
         Returns:
             list: List of product dictionaries
@@ -94,7 +96,14 @@ class Product:
         offset = (page - 1) * per_page
         
         # Build WHERE clause dynamically
-        where_clauses = ["p.is_active = TRUE"]
+        where_clauses = []
+        if not include_inactive:
+            where_clauses.append("p.is_active = TRUE")
+        else:
+            # If including inactive, we might still want to soft-delete check if we had one,
+            # but here is_active IS the soft delete, so we just don't filter it out.
+            pass
+            
         params = []
         
         if category_id:
@@ -114,7 +123,12 @@ class Product:
             where_clauses.append("p.price <= %s")
             params.append(max_price)
         
-        where_clause = " AND ".join(where_clauses)
+        # If no clauses (e.g. asking for all active/inactive), we need at least 1=1 or similar if we use AND
+        # But 'join' with empty list returns empty string.
+        if where_clauses:
+            where_clause = "WHERE " + " AND ".join(where_clauses)
+        else:
+            where_clause = ""
         
         # Validate sort parameters
         valid_sort_columns = ['name', 'price', 'created_at', 'stock']
@@ -128,7 +142,7 @@ class Product:
             SELECT p.*, c.name as category_name
             FROM products p
             JOIN categories c ON p.category_id = c.id
-            WHERE {where_clause}
+            {where_clause}
             ORDER BY p.{sort_by} {sort_order}
             LIMIT %s OFFSET %s
         """
@@ -266,7 +280,7 @@ class Product:
     @staticmethod
     def delete(product_id):
         """
-        Soft delete product (set is_active to False)
+        Hard delete product
         
         Args:
             product_id (int): Product ID
@@ -274,13 +288,19 @@ class Product:
         Returns:
             bool: True if successful, False otherwise
         """
-        query = "UPDATE products SET is_active = FALSE WHERE id = %s"
-        result = execute_query(query, (product_id,), commit=True)
-        
-        if result and result > 0:
-            logger.info(f"Product soft deleted: ID {product_id}")
-            return True
-        return False
+        try:
+            query = "DELETE FROM products WHERE id = %s"
+            # If there are foreign key constraints (like order_items), this will raise an error
+            result = execute_query(query, (product_id,), commit=True)
+            
+            if result and result > 0:
+                logger.info(f"Product hard deleted: ID {product_id}")
+                return True
+            return False
+        except Exception as e:
+            logger.error(f"Error deleting product: {str(e)}")
+            # We explicitly want to know if it failed, likely due to integrity constraints
+            return False
     
     
     @staticmethod
