@@ -120,7 +120,8 @@ class Order:
             dict: Order data with user details or None
         """
         query = """
-            SELECT o.*, u.full_name as customer_name, u.email as customer_email
+            SELECT o.*, u.full_name as customer_name, u.email as customer_email,
+                   (o.order_status = 'Delivered' AND o.updated_at >= CURRENT_TIMESTAMP - INTERVAL '7 days') as is_returnable
             FROM orders o
             JOIN users u ON o.user_id = u.id
             WHERE o.id = %s
@@ -163,7 +164,8 @@ class Order:
         offset = (page - 1) * per_page
         
         query = """
-            SELECT o.*, p.payment_status, p.payment_method
+            SELECT o.*, p.payment_status, p.payment_method,
+                   (o.order_status = 'Delivered' AND o.updated_at >= CURRENT_TIMESTAMP - INTERVAL '7 days') as is_returnable
             FROM orders o
             LEFT JOIN payments p ON o.id = p.order_id
             WHERE o.user_id = %s
@@ -189,7 +191,8 @@ class Order:
         
         query = """
             SELECT o.*, u.full_name as customer_name, u.email as customer_email,
-                   p.payment_status, p.payment_method
+                   p.payment_status, p.payment_method,
+                   (o.order_status = 'Delivered' AND o.updated_at >= CURRENT_TIMESTAMP - INTERVAL '7 days') as is_returnable
             FROM orders o
             JOIN users u ON o.user_id = u.id
             LEFT JOIN payments p ON o.id = p.order_id
@@ -220,6 +223,74 @@ class Order:
         return False
     
     
+    @staticmethod
+    def cancel_order(order_id, cancel_reason):
+        """
+        Cancel an order with a reason
+        
+        Args:
+            order_id (int): Order ID
+            cancel_reason (str): Reason for cancellation
+            
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        try:
+            query = """
+                UPDATE orders 
+                SET order_status = 'Cancelled', 
+                    cancel_reason = %s,
+                    cancelled_at = CURRENT_TIMESTAMP,
+                    updated_at = CURRENT_TIMESTAMP 
+                WHERE id = %s 
+                AND order_status NOT IN ('Cancelled', 'Delivered')
+            """
+            result = execute_query(query, (cancel_reason, order_id), commit=True)
+            
+            if result and result > 0:
+                logger.info(f"Order {order_id} cancelled. Reason: {cancel_reason}")
+                return True
+            return False
+            
+        except Exception as e:
+            logger.error(f"Error cancelling order: {str(e)}")
+            return False
+    
+    
+    @staticmethod
+    def return_order(order_id, return_reason):
+        """
+        Return an order with a reason
+        
+        Args:
+            order_id (int): Order ID
+            return_reason (str): Reason for return
+            
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        try:
+            query = """
+                UPDATE orders 
+                SET order_status = 'Returned', 
+                    return_reason = %s,
+                    returned_at = CURRENT_TIMESTAMP,
+                    updated_at = CURRENT_TIMESTAMP 
+                WHERE id = %s 
+                AND order_status = 'Delivered'
+            """
+            result = execute_query(query, (return_reason, order_id), commit=True)
+            
+            if result and result > 0:
+                logger.info(f"Order {order_id} returned. Reason: {return_reason}")
+                return True
+            return False
+            
+        except Exception as e:
+            logger.error(f"Error returning order: {str(e)}")
+            return False
+
+
     @staticmethod
     def get_order_count():
         """

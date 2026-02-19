@@ -22,13 +22,21 @@ class Payment:
         try:
             transaction_id = Payment.generate_transaction_id()
             
-            # Simulate payment success (90% success rate)
-            payment_status = 'Success' if random.random() < 0.9 else 'Failed'
+            # Simulate payment - Always succeed for testing reliability
+            payment_status = 'Success'
             
             query = """
                 INSERT INTO payments (order_id, transaction_id, payment_method, 
                                     amount, payment_status, card_last_four, upi_id)
                 VALUES (%s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (order_id) DO UPDATE SET
+                    transaction_id = EXCLUDED.transaction_id,
+                    payment_method = EXCLUDED.payment_method,
+                    amount = EXCLUDED.amount,
+                    payment_status = EXCLUDED.payment_status,
+                    card_last_four = EXCLUDED.card_last_four,
+                    upi_id = EXCLUDED.upi_id,
+                    updated_at = CURRENT_TIMESTAMP
                 RETURNING id, transaction_id, payment_status
             """
             

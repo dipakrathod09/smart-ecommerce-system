@@ -106,3 +106,66 @@ def order_detail(order_id):
                          order=order,
                          order_items=order_items,
                          payment=payment)
+
+
+@order_bp.route('/cancel/<int:order_id>', methods=['POST'])
+@login_required
+def cancel_order(order_id):
+    """Cancel an order"""
+    order = Order.get_by_id(order_id)
+    
+    # Security check - ensure order belongs to logged-in user
+    if not order or order['user_id'] != session['user_id']:
+        flash('Order not found.', 'danger')
+        return redirect(url_for('order.order_history'))
+    
+    # Check if order can be cancelled
+    if order['order_status'] in ['Delivered', 'Cancelled']:
+        flash('This order cannot be cancelled.', 'warning')
+        return redirect(url_for('order.order_history'))
+    
+    # Update order status to Cancelled
+    if Order.update_status(order_id, 'Cancelled'):
+        flash(f'Order #{order["order_number"]} has been cancelled successfully.', 'success')
+    else:
+        flash('Failed to cancel order. Please try again.', 'danger')
+    
+    return redirect(url_for('order.order_history'))
+
+
+@order_bp.route('/return/<int:order_id>', methods=['POST'])
+@login_required
+def return_order(order_id):
+    """Return an order"""
+    order = Order.get_by_id(order_id)
+    
+    # Security check - ensure order belongs to logged-in user
+    if not order or order['user_id'] != session['user_id']:
+        flash('Order not found.', 'danger')
+        return redirect(url_for('order.order_history'))
+    
+    # Check if order can be returned (must be Delivered and within 7 days)
+    if not order.get('is_returnable'):
+        flash('This order is not eligible for return (must be within 7 days of delivery).', 'warning')
+        return redirect(url_for('order.order_history'))
+    
+    return_reason = request.form.get('return_reason')
+    other_reason = request.form.get('other_reason')
+
+    # Combine selection and detailed text
+    if return_reason and other_reason:
+        final_reason = f"[{return_reason}] {other_reason}"
+    else:
+        final_reason = return_reason or other_reason
+
+    if not final_reason:
+        flash('Please provide a reason for return.', 'warning')
+        return redirect(url_for('order.order_history'))
+    
+    # Update order status to Returned
+    if Order.return_order(order_id, final_reason):
+        flash(f'Return request for Order #{order["order_number"]} has been submitted successfully.', 'success')
+    else:
+        flash('Failed to process return request. Please try again.', 'danger')
+    
+    return redirect(url_for('order.order_history'))

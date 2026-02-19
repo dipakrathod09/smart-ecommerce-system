@@ -43,7 +43,7 @@ class Recommendation:
                 JOIN orders o2 ON oi2.order_id = o2.id
                 WHERE o2.user_id = %s
             )
-            ORDER BY RANDOM()
+            ORDER BY random()
             LIMIT %s
         """
         return execute_dict_query(query, (user_id, user_id, limit), fetch_all=True) or []
@@ -71,7 +71,7 @@ class Recommendation:
                 AND p.id != %s
                 AND p.is_active = TRUE
                 AND p.stock > 0
-                ORDER BY RANDOM()
+                ORDER BY random()
                 LIMIT %s
             """
             return execute_dict_query(query, (category_id, exclude_product_id, limit), fetch_all=True) or []
@@ -83,7 +83,7 @@ class Recommendation:
                 WHERE p.category_id = %s 
                 AND p.is_active = TRUE
                 AND p.stock > 0
-                ORDER BY RANDOM()
+                ORDER BY random()
                 LIMIT %s
             """
             return execute_dict_query(query, (category_id, limit), fetch_all=True) or []
@@ -149,7 +149,7 @@ class Recommendation:
             FROM products p
             JOIN categories c ON p.category_id = c.id
             WHERE p.is_active = TRUE AND p.stock > 0
-            ORDER BY RANDOM()
+            ORDER BY random()
             LIMIT %s
         """
         random_recs = execute_dict_query(random_query, (int(limit * 0.3),), fetch_all=True) or []
