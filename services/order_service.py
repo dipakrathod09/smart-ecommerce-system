@@ -136,8 +136,19 @@ class OrderService:
 
     @staticmethod
     def update_order_status(order_id, status):
-        """Update order status"""
-        return Order.update_status(order_id, status)
+        """Update order status and handle side effects"""
+        success = Order.update_status(order_id, status)
+        
+        if success and status == 'Delivered':
+            # Side effect: If COD, mark payment as success upon delivery
+            payment = Payment.get_by_order_id(order_id)
+            if payment and payment.get('payment_method', '').upper() == 'COD':
+                # If it's not already success, update it
+                if payment.get('payment_status') != 'Success':
+                    Payment.update_status(order_id, 'Success')
+                    logger.info(f"Payment for order {order_id} marked as Success (COD delivered)")
+                
+        return success
 
     @staticmethod
     def cancel_order(order_id, user_id, reason):

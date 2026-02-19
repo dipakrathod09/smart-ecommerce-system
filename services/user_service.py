@@ -37,30 +37,28 @@ class UserService:
                      city=None, state=None, pincode=None):
         """
         Register a new user
-        1. Check if email exists
-        2. Hash password
-        3. Create user in DB
+        Returns: (user_dict, error_message)
         """
         try:
             if User.email_exists(email):
                 logger.warning(f"Registration failed: Email {email} already exists")
-                return None
+                return None, "Email address already registered. Please login or use another email."
             
             password_hash = UserService.hash_password(password)
             
-            # Call Model's create method (to be refactored from 'register')
             user = User.create(
                 full_name, email, password_hash, phone, address, city, state, pincode
             )
             
             if user:
                 logger.info(f"User registered successfully: {email}")
-                return user
-            return None
+                return user, None
+            
+            return None, "Failed to create user account. Please contact support."
             
         except Exception as e:
             logger.error(f"Error in register_user service: {str(e)}")
-            return None
+            return None, f"An internal error occurred: {str(e)}"
 
     @staticmethod
     def authenticate_user(email, password):

@@ -84,18 +84,26 @@ def process_payment():
         upi_id=upi_id
     )
     
-    if payment and payment['payment_status'] == 'Success':
+    # Check if payment was successful or if it's a valid COD pending state
+    is_success = payment and (
+        payment['payment_status'] == 'Success' or 
+        (payment_method == 'COD' and payment['payment_status'] == 'Pending')
+    )
+    
+    if is_success:
         # Finalize order (Update status + Decrement Stock)
         OrderService.finalize_order(order_id)
         
-        # Clear cart after successful payment
+        # Clear cart after successful placement
         Cart.clear_cart(session['user_id'])
         
         # Clear pending order from session
         session.pop('pending_order_id', None)
         session.pop('payment_method', None)
         
-        flash('Payment successful! Your order has been placed.', 'success')
+        success_msg = 'Order placed successfully! Cash will be collected upon delivery.' if payment_method == 'COD' else 'Payment successful! Your order has been placed.'
+        flash(success_msg, 'success')
+        
         return render_template('payment/success.html',
                              order=order,
                              payment=payment)

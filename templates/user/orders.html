@@ -118,10 +118,10 @@
                     {% endif %}
                 </td>
                 <td>
-                    {% if order.payment_method == 'COD' %}
-                    <span class="badge bg-info">Processing</span>
-                    {% elif order.payment_status == 'Success' %}
+                    {% if order.payment_status == 'Success' %}
                     <span class="badge bg-success">Paid</span>
+                    {% elif order.payment_method == 'COD' %}
+                    <span class="badge bg-info">Processing (COD)</span>
                     {% else %}
                     <span class="badge bg-warning">{{ order.payment_status or 'Pending' }}</span>
                     {% endif %}
@@ -131,22 +131,11 @@
                         <a href="{{ url_for('order.order_detail', order_id=order.id) }}" class="btn btn-sm btn-primary">
                             <i class="fas fa-eye"></i> View
                         </a>
-                        {% if order.order_status not in ['Cancelled', 'Delivered', 'Returned'] %}
-                        <form action="{{ url_for('order.cancel_order', order_id=order.id) }}" method="POST"
-                            onsubmit="return confirm('Are you sure you want to cancel this order?');"
-                            style="display:inline;">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <input type="hidden" name="cancel_reason" value="Cancelled by user">
-                            <button type="submit" class="btn-cancel-order">
-                                <i class="fas fa-times-circle"></i> Cancel
-                            </button>
-                        </form>
-                        {% endif %}
-                        {% if order.is_returnable %}
-                        <button type="button" class="btn-return-order" data-bs-toggle="modal"
-                            data-bs-target="#returnPolicyModal" data-order-id="{{ order.id }}"
+                        {% if order.order_status not in ['Delivered', 'Cancelled', 'Returned'] %}
+                        <button type="button" class="btn-cancel-order" data-bs-toggle="modal"
+                            data-bs-target="#cancelOrderModal" data-order-id="{{ order.id }}"
                             data-order-number="{{ order.order_number }}">
-                            <i class="fas fa-undo"></i> Return
+                            <i class="fas fa-times-circle"></i> Cancel
                         </button>
                         {% endif %}
                     </div>
@@ -157,6 +146,18 @@
     </table>
 </div>
 
+{% else %}
+<div class="alert alert-info">
+    <h4><i class="fas fa-info-circle"></i> No orders yet!</h4>
+    <p>You haven't placed any orders. Start shopping now!</p>
+    <a href="{{ url_for('product.list_products') }}" class="btn btn-primary">
+        <i class="fas fa-shopping-bag"></i> Browse Products
+    </a>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block modals %}
 <!-- Return Policy Modal -->
 <div class="modal fade" id="returnPolicyModal" tabindex="-1" aria-labelledby="returnPolicyModalLabel"
     aria-hidden="true">
@@ -237,15 +238,60 @@
     </div>
 </div>
 
-{% else %}
-<div class="alert alert-info">
-    <h4><i class="fas fa-info-circle"></i> No orders yet!</h4>
-    <p>You haven't placed any orders. Start shopping now!</p>
-    <a href="{{ url_for('product.list_products') }}" class="btn btn-primary">
-        <i class="fas fa-shopping-bag"></i> Browse Products
-    </a>
+<!-- Cancel Order Modal -->
+<div class="modal fade" id="cancelOrderModal" tabindex="-1" aria-labelledby="cancelOrderModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+            <form id="cancelOrderForm" action="" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header border-bottom-0 pt-4 px-4">
+                    <h5 class="modal-title fw-bold" id="cancelOrderModalLabel">
+                        <i class="fas fa-times-circle text-danger me-2"></i> Cancel Order
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body px-4 pb-4">
+                    <div class="alert alert-warning border-0 rounded-3 mb-4">
+                        <p class="mb-0 small fw-bold">Order: <span id="cancelModalOrderNumber"></span></p>
+                        <p class="mb-0 small">Are you sure you want to cancel this order? This action cannot be undone.
+                        </p>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="cancel_reason" class="form-label fw-bold text-secondary small text-uppercase">
+                            Reason for cancellation
+                        </label>
+                        <select name="cancel_reason" id="cancel_reason" class="form-select border-0 shadow-sm"
+                            style="border-radius: 12px; height: 50px;" required>
+                            <option value="" selected disabled>Select a reason...</option>
+                            <option value="Better price elsewhere">Better price elsewhere</option>
+                            <option value="Shipping is too long">Shipping is too long</option>
+                            <option value="Order placed by mistake">Order placed by mistake</option>
+                            <option value="Changed my mind">Changed my mind</option>
+                            <option value="Duplicate order">Duplicate order</option>
+                            <option value="Other">Other (Please specify)</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-0">
+                        <label for="cancel_other_reason" class="form-label fw-bold text-secondary small text-uppercase">
+                            Additional Comments
+                        </label>
+                        <textarea name="other_reason" id="cancel_other_reason" class="form-control border-0 shadow-sm"
+                            rows="3" style="border-radius: 12px; resize: none;"
+                            placeholder="Tell us more about why you're cancelling..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0 pb-4 px-4">
+                    <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Keep Order</button>
+                    <button type="submit" class="btn btn-danger px-4 fw-bold shadow-sm" style="border-radius: 12px;">
+                        Confirm Cancellation
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
-{% endif %}
 {% endblock %}
 
 {% block extra_js %}
@@ -265,16 +311,39 @@
                 var orderId = button.getAttribute('data-order-id');
                 var orderNumber = button.getAttribute('data-order-number');
 
-                // Update modal content
                 var modalOrderNumber = returnModal.querySelector('#modalOrderNumber');
                 var returnForm = returnModal.querySelector('#returnOrderForm');
 
                 modalOrderNumber.textContent = orderNumber;
-                returnForm.action = '/orders/return/' + orderId;
 
-                // Reset inputs
+                // Use a dynamic action based on the template-generated URL
+                var actionUrl = "{{ url_for('order.return_order', order_id=0) }}".replace('/0', '/' + orderId);
+                returnForm.action = actionUrl;
+
                 returnModal.querySelector('#return_reason').value = '';
                 returnModal.querySelector('#other_reason').value = '';
+            });
+        }
+
+        // Handle Cancel Modal Population
+        var cancelModal = document.getElementById('cancelOrderModal');
+        if (cancelModal) {
+            cancelModal.addEventListener('show.bs.modal', function (event) {
+                var button = event.relatedTarget;
+                var orderId = button.getAttribute('data-order-id');
+                var orderNumber = button.getAttribute('data-order-number');
+
+                var modalOrderNumber = cancelModal.querySelector('#cancelModalOrderNumber');
+                var cancelForm = cancelModal.querySelector('#cancelOrderForm');
+
+                modalOrderNumber.textContent = orderNumber;
+
+                // Use a dynamic action based on the template-generated URL
+                var actionUrl = "{{ url_for('order.cancel_order', order_id=0) }}".replace('/0', '/' + orderId);
+                cancelForm.action = actionUrl;
+
+                cancelModal.querySelector('#cancel_reason').value = '';
+                cancelModal.querySelector('#cancel_other_reason').value = '';
             });
         }
     });

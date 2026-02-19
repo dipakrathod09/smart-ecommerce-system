@@ -42,8 +42,8 @@
                             <i class="fas fa-lock"></i> Password <span class="text-danger">*</span>
                         </label>
                         <input type="password" class="form-control" id="password" name="password"
-                            placeholder="Create a strong password" required minlength="6">
-                        <small class="text-muted">Minimum 6 characters</small>
+                            placeholder="Create a strong password" required minlength="8">
+                        <small class="text-muted">Min 8 chars: 1 uppercase, 1 lowercase, 1 digit, 1 special char</small>
                         <div id="password-strength" class="mt-1"></div>
                     </div>
 
@@ -52,7 +52,7 @@
                             <i class="fas fa-lock"></i> Confirm Password <span class="text-danger">*</span>
                         </label>
                         <input type="password" class="form-control" id="confirm_password" name="confirm_password"
-                            placeholder="Re-enter your password" required minlength="6">
+                            placeholder="Re-enter your password" required minlength="8">
                     </div>
 
                     <div class="d-grid">
@@ -84,7 +84,7 @@
         var strength = 0;
         var strengthDiv = document.getElementById('password-strength');
 
-        if (password.length >= 6) strength++;
+        if (password.length >= 8) strength++;
         if (password.match(/[a-z]/) && password.match(/[A-Z]/)) strength++;
         if (password.match(/\d/)) strength++;
         if (password.match(/[^a-zA-Z\d]/)) strength++;

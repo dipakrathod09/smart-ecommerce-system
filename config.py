@@ -25,7 +25,7 @@ class Config:
     SESSION_COOKIE_NAME = 'smart_ecommerce_session'
     SESSION_COOKIE_HTTPONLY = True  # Prevent JavaScript access to session cookie
     SESSION_COOKIE_SAMESITE = 'Lax'  # CSRF protection
-    PERMANENT_SESSION_LIFETIME = timedelta(hours=24)  # Session expires after 24 hours
+    PERMANENT_SESSION_LIFETIME = timedelta(days=365)  # Session stays for 1 year
     
     # ===================================================================
     # DATABASE SETTINGS

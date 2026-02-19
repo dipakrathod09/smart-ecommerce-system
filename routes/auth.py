@@ -62,17 +62,16 @@ def register():
         
         # Register user
         try:
-            user = UserService.register_user(full_name, email, password, phone)
+            user, error_msg = UserService.register_user(full_name, email, password, phone)
             
             if user:
                 flash('Registration successful! Please login.', 'success')
                 return redirect(url_for('auth.login'))
             else:
-                flash('Email already exists. Please use a different email.', 'danger')
+                flash(error_msg or 'Registration failed. Please try again.', 'danger')
                 return render_template('auth/register.html')
         except Exception as e:
-            # flash(f'Registration failed: {str(e)}', 'danger') # DON'T EXPOSE EXCEPTIONS
-            flash('Registration failed. Please try again later.', 'danger')
+            flash('An unexpected error occurred during registration.', 'danger')
             return render_template('auth/register.html')
     
     return render_template('auth/register.html')
@@ -105,7 +104,10 @@ def login():
                 session['user_name'] = user['full_name']
                 session['user_email'] = user['email']
                 session['is_admin'] = False
-                session.permanent = True  # Make session permanent
+                
+                # Make session permanent by default so user stays logged in
+                # even after browser closes. Only explicit logout clears it.
+                session.permanent = True
                 
                 flash(f'Welcome back, {user["full_name"]}!', 'success')
                 
@@ -128,6 +130,8 @@ def login():
                 session['admin_username'] = admin['username']
                 session['is_admin'] = True
                 session['is_super_admin'] = admin.get('is_super_admin', False)
+                
+                # Admin sessions are also permanent
                 session.permanent = True
                 
                 flash(f'Welcome Admin, {admin["username"]}!', 'success')
@@ -171,7 +175,9 @@ def admin_login():
                 session['admin_username'] = admin['username']
                 session['is_admin'] = True
                 session['is_super_admin'] = admin.get('is_super_admin', False)
-                session.permanent = True  # Make session permanent
+                
+                # Stay logged in by default
+                session.permanent = True
                 
                 flash(f'Welcome, {admin["username"]}!', 'success')
                 return redirect(url_for('admin.dashboard'))

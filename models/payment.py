@@ -22,8 +22,8 @@ class Payment:
         try:
             transaction_id = Payment.generate_transaction_id()
             
-            # Simulate payment - Always succeed for testing reliability
-            payment_status = 'Success'
+            # For COD, status is initially Pending. For others, it's Success (simulated).
+            payment_status = 'Pending' if payment_method == 'COD' else 'Success'
             
             query = """
                 INSERT INTO payments (order_id, transaction_id, payment_method, 
@@ -47,16 +47,24 @@ class Payment:
                 fetch_one=True
             )
             
-            if result and result['payment_status'] == 'Success':
-                # Order status update moved to OrderService.finalize_order
-                logger.info(f"Payment successful: {transaction_id}")
-            else:
-                logger.warning(f"Payment failed: {transaction_id}")
+            if result:
+                logger.info(f"Payment record created/updated: {transaction_id} (Status: {payment_status})")
             
             return result
         except Exception as e:
             logger.error(f"Error processing payment: {str(e)}")
             return None
+
+    @staticmethod
+    def update_status(order_id, new_status):
+        """Update payment status"""
+        try:
+            query = "UPDATE payments SET payment_status = %s, updated_at = CURRENT_TIMESTAMP WHERE order_id = %s"
+            result = execute_query(query, (new_status, order_id), commit=True)
+            return (result and result > 0)
+        except Exception as e:
+            logger.error(f"Error updating payment status: {str(e)}")
+            return False
     
     @staticmethod
     def get_by_order_id(order_id):

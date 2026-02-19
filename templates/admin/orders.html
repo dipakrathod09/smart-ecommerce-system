@@ -42,8 +42,11 @@
                     </select>
                 </form>
             </td>
-            <td><span class="badge bg-{{ 'success' if order.payment_status == 'Success' else 'warning' }}">{{
-                    order.payment_status or 'Pending' }}</span></td>
+            <td>
+                <span class="badge bg-{{ 'success' if order.payment_status == 'Success' else 'warning' }}">
+                    {{ 'Paid' if order.payment_status == 'Success' else (order.payment_status or 'Pending') }}
+                </span>
+            </td>
             <td>
                 {% if order.order_status == 'Returned' %}
                 <div class="text-wrap" style="max-width: 150px;">

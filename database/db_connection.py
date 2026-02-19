@@ -308,7 +308,7 @@ def execute_query(query, params=None, fetch_one=False, fetch_all=False, commit=F
             release_db_connection(conn)
 
 
-def execute_dict_query(query, params=None, fetch_one=False, fetch_all=False):
+def execute_dict_query(query, params=None, fetch_one=False, fetch_all=False, commit=False):
     """
     Execute query and return results as dictionary
     Useful when you want column names with values
@@ -318,6 +318,7 @@ def execute_dict_query(query, params=None, fetch_one=False, fetch_all=False):
         params (tuple): Query parameters
         fetch_one (bool): Return single dict
         fetch_all (bool): Return list of dicts
+        commit (bool): If True, commit the transaction
     
     Returns:
         Dictionary or list of dictionaries with column names as keys
@@ -345,7 +346,7 @@ def execute_dict_query(query, params=None, fetch_one=False, fetch_all=False):
         
         # Check if this is an INSERT/UPDATE/DELETE with RETURNING
         query_upper = query.strip().upper()
-        needs_commit = any(query_upper.startswith(cmd) for cmd in ['INSERT', 'UPDATE', 'DELETE'])
+        needs_commit = any(query_upper.startswith(cmd) for cmd in ['INSERT', 'UPDATE', 'DELETE', 'WITH'])
         
         if fetch_one:
             row = cursor.fetchone()
@@ -353,10 +354,13 @@ def execute_dict_query(query, params=None, fetch_one=False, fetch_all=False):
         elif fetch_all:
             rows = cursor.fetchall()
             result = [dict(row) for row in rows] if rows else []
+        else:
+            result = cursor.rowcount
         
-        # Commit if it's a write operation
-        if needs_commit:
+        # Commit if it's a write operation (auto-detect if not explicit)
+        if commit or needs_commit:
             conn.commit()
+            logger.info(f"Transaction committed for query: {query_upper[:50]}...")
         
         return result
         

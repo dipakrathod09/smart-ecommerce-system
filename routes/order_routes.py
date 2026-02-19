@@ -146,12 +146,21 @@ def order_detail(order_id):
                          payment=order.get('payment'))
 
 
-@order_bp.route('/cancel/<int:order_id>', methods=['POST'])
+@order_bp.route('/cancel/<int:order_id>', methods=['GET', 'POST'])
 @login_required
 def cancel_order(order_id):
     """Cancel an order"""
+    if request.method == 'GET':
+        return redirect(url_for('order.order_history'))
+        
+    cancel_reason = request.form.get('cancel_reason', 'User Request')
+    other_reason = request.form.get('other_reason')
+    
+    if other_reason:
+        cancel_reason = f"{cancel_reason}: {other_reason}"
+        
     # Cancel order via Service
-    success, message = OrderService.cancel_order(order_id, session['user_id'], 'User Request')
+    success, message = OrderService.cancel_order(order_id, session['user_id'], cancel_reason)
     
     if success:
         flash(message, 'success')
@@ -161,10 +170,20 @@ def cancel_order(order_id):
     return redirect(url_for('order.order_history'))
 
 
-@order_bp.route('/return/<int:order_id>', methods=['POST'])
+@order_bp.route('/return/<int:order_id>', methods=['GET', 'POST'])
 @login_required
 def return_order(order_id):
     """Return an order"""
+    if request.method == 'GET':
+        return redirect(url_for('order.order_history'))
+        
+    return_reason = request.form.get('return_reason', 'User Request')
+    other_reason = request.form.get('other_reason')
+    
+    final_reason = return_reason
+    if other_reason:
+        final_reason = f"{return_reason}: {other_reason}"
+        
     # Return order via Service
     success, message = OrderService.return_order(order_id, session['user_id'], final_reason)
     
