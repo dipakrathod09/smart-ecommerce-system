@@ -91,32 +91,24 @@ app.register_blueprint(review_bp, url_prefix='/reviews')
 # TEMPLATE FILTERS (Custom Jinja2 filters)
 # ===================================================================
 
+from utils.helpers import format_currency, format_datetime, truncate_text
+
 @app.template_filter('currency')
 def currency_filter(value):
     """Format number as currency (INR)"""
-    try:
-        return f"₹{float(value):,.2f}"
-    except (ValueError, TypeError):
-        return "₹0.00"
+    return format_currency(value)
 
 
 @app.template_filter('datetime_format')
 def datetime_format_filter(value, format='%d %b %Y, %I:%M %p'):
     """Format datetime object"""
-    if value is None:
-        return ""
-    try:
-        return value.strftime(format)
-    except:
-        return str(value)
+    return format_datetime(value, format)
 
 
 @app.template_filter('truncate_text')
 def truncate_text_filter(text, length=100):
     """Truncate text to specified length"""
-    if len(text) <= length:
-        return text
-    return text[:length] + '...'
+    return truncate_text(text, length)
 
 
 # ===================================================================

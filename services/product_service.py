@@ -20,7 +20,8 @@ class ProductService:
 
     @staticmethod
     def get_products(page=1, per_page=12, category_id=None, search_term=None, 
-                    min_price=None, max_price=None, sort_by='created_at', sort_order='DESC'):
+                    min_price=None, max_price=None, sort_by='created_at', sort_order='DESC',
+                    include_inactive=False):
         """Get all products with filtering"""
         return Product.get_all(
             page=page, 
@@ -30,7 +31,8 @@ class ProductService:
             min_price=min_price,
             max_price=max_price,
             sort_by=sort_by,
-            sort_order=sort_order
+            sort_order=sort_order,
+            include_inactive=include_inactive
         )
 
     @staticmethod
@@ -60,8 +62,26 @@ class ProductService:
 
     @staticmethod
     def delete_product(product_id):
-        """Soft delete product"""
-        return Product.delete(product_id)
+        """
+        Hard delete product and clean up dependencies
+        """
+        try:
+            # 1. Clean up dependencies first
+            from models.cart import Cart
+            from models.wishlist import Wishlist
+            from models.review import Review
+            
+            Cart.delete_by_product(product_id)
+            Wishlist.delete_by_product(product_id)
+            Review.delete_by_product(product_id)
+            
+            # 2. Attempt hard delete
+            # If this fails (e.g. Foreign Key constraint from order_items), it returns False
+            return Product.delete(product_id)
+            
+        except Exception as e:
+            logger.error(f"Error in delete_product service: {str(e)}")
+            return False
 
     @staticmethod
     def get_related_products(product_id, limit=4):

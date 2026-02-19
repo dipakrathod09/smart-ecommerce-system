@@ -109,3 +109,22 @@ class Wishlist:
         if results:
             return {row['product_id'] for row in results}
         return set()
+
+    @staticmethod
+    def delete_by_product(product_id):
+        """
+        Remove product from all wishlists
+        
+        Args:
+            product_id (int): Product ID
+            
+        Returns:
+            bool: True if successful
+        """
+        try:
+            query = "DELETE FROM wishlists WHERE product_id = %s"
+            execute_query(query, (product_id,), commit=True)
+            return True
+        except Exception as e:
+            logger.error(f"Error removing product {product_id} from wishlists: {str(e)}")
+            return False
