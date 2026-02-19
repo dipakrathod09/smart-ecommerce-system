@@ -155,30 +155,37 @@
                     <p class="text-muted">Experience the future of shopping with our AI-powered recommendation engine
                         and premium products.</p>
                 </div>
-                <div class="col-lg-2 col-6">
-                    <h6 class="fw-bold mb-3">Shop</h6>
-                    <ul class="list-unstyled text-muted">
-                        <li class="mb-2"><a href="{{ url_for('product.list_products') }}"
-                                class="text-decoration-none text-muted">All Products</a></li>
-                        <li class="mb-2"><a href="#" class="text-decoration-none text-muted">Categories</a></li>
-                        <li class="mb-2"><a href="#" class="text-decoration-none text-muted">Deals</a></li>
+                <div class="col-lg-2 col-md-3 col-6">
+                    <h6 class="fw-bold mb-4 text-dark text-uppercase small letter-spacing-1">Shop</h6>
+                    <ul class="list-unstyled footer-links">
+                        <li class="mb-3"><a href="{{ url_for('product.list_products') }}">All Products</a></li>
+                        <li class="mb-3"><a href="{{ url_for('product.list_products', filter='deals') }}">Deals</a></li>
+                        <li class="mb-3"><a href="{{ url_for('product.list_products') }}#categories">Categories</a></li>
                     </ul>
                 </div>
-                <div class="col-lg-2 col-6">
-                    <h6 class="fw-bold mb-3">Support</h6>
-                    <ul class="list-unstyled text-muted">
-                        <li class="mb-2"><a href="#" class="text-decoration-none text-muted">Help Center</a></li>
-                        <li class="mb-2"><a href="{{ url_for('return_policy') }}"
-                                class="text-decoration-none text-muted">Returns Policy</a></li>
-                        <li class="mb-2"><a href="#" class="text-decoration-none text-muted">Contact Us</a></li>
+                <div class="col-lg-2 col-md-3 col-6">
+                    <h6 class="fw-bold mb-4 text-dark text-uppercase small letter-spacing-1">Policies</h6>
+                    <ul class="list-unstyled footer-links">
+                        <li class="mb-3"><a href="{{ url_for('return_policy') }}">Return Policy</a></li>
                     </ul>
                 </div>
-                <div class="col-lg-4">
-                    <h6 class="fw-bold mb-3">Stay Updated</h6>
-                    <form class="d-flex gap-2">
-                        <input type="email" class="form-control" placeholder="Enter your email">
-                        <button class="btn btn-primary" type="button">Subscribe</button>
-                    </form>
+                <div class="col-lg-4 col-md-6">
+                    <h6 class="fw-bold mb-4 text-dark text-uppercase small letter-spacing-1">Contact Us</h6>
+                    <ul class="list-unstyled footer-contact">
+                        <li class="mb-3 d-flex align-items-center">
+                            <div class="contact-icon-wrapper me-3">
+                                <i class="fas fa-envelope text-primary"></i>
+                            </div>
+                            <a href="mailto:keyansheladiya@gmail.com"
+                                class="text-decoration-none text-muted">keyansheladiya@gmail.com</a>
+                        </li>
+                        <li class="mb-3 d-flex align-items-center">
+                            <div class="contact-icon-wrapper me-3">
+                                <i class="fas fa-phone-alt text-primary"></i>
+                            </div>
+                            <a href="tel:6352110734" class="text-decoration-none text-muted">+91 63521 10734</a>
+                        </li>
+                    </ul>
                 </div>
             </div>
             <div class="text-center text-muted mt-5 pt-4 border-top">

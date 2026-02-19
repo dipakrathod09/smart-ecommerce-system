@@ -436,3 +436,46 @@ h6 {
 .suggestion-item:last-child {
     border-bottom: none !important;
 }
+
+/* ===================================================================
+   FOOTER ENHANCEMENTS
+   ================================================================ */
+
+.letter-spacing-1 {
+    letter-spacing: 1px;
+}
+
+.footer-links li a {
+    transition: all 0.3s ease;
+    display: inline-block;
+    color: #6c757d;
+    text-decoration: none;
+}
+
+.footer-links li a:hover {
+    color: var(--primary-color) !important;
+    transform: translateX(5px);
+}
+
+.contact-icon-wrapper {
+    width: 32px;
+    height: 32px;
+    background: rgba(102, 126, 234, 0.1);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.footer-contact a {
+    transition: color 0.3s ease;
+}
+
+.footer-contact a:hover {
+    color: var(--primary-color) !important;
+}
+
+footer {
+    background-color: #ffffff !important;
+}
