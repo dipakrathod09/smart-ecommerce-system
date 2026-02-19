@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+{% block title %}Return Policy - SmartStore{% endblock %}
+
+{% block extra_css %}
+<style>
+    .policy-container {
+        padding: 80px 0;
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .policy-card {
+        background: #fff;
+        border-radius: 20px;
+        padding: 50px;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.05);
+        border: 1px solid #f0f0f0;
+    }
+
+    .policy-header {
+        text-align: center;
+        margin-bottom: 50px;
+    }
+
+    .policy-header h1 {
+        font-weight: 700;
+        color: #2d3436;
+        margin-bottom: 15px;
+        font-family: 'Poppins', sans-serif;
+    }
+
+    .policy-header .underline {
+        width: 60px;
+        height: 4px;
+        background: #3742fa;
+        margin: 0 auto;
+        border-radius: 2px;
+    }
+
+    .section-title {
+        font-weight: 600;
+        color: #2d3436;
+        margin-top: 35px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .section-title i {
+        color: #3742fa;
+        font-size: 1.2rem;
+    }
+
+    .policy-content p {
+        color: #636e72;
+        line-height: 1.8;
+        margin-bottom: 15px;
+    }
+
+    .policy-list {
+        list-style: none;
+        padding-left: 0;
+    }
+
+    .policy-list li {
+        position: relative;
+        padding-left: 25px;
+        margin-bottom: 12px;
+        color: #636e72;
+    }
+
+    .policy-list li::before {
+        content: '\f00c';
+        font-family: 'Font Awesome 6 Free';
+        font-weight: 900;
+        position: absolute;
+        left: 0;
+        color: #2ed573;
+        font-size: 0.8rem;
+        top: 4px;
+    }
+
+    .highlight-box {
+        background: #f1f2f6;
+        border-left: 4px solid #3742fa;
+        padding: 20px 25px;
+        border-radius: 0 12px 12px 0;
+        margin: 30px 0;
+    }
+
+    .highlight-box p {
+        margin-bottom: 0;
+        font-weight: 500;
+        color: #2d3436;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="policy-container">
+    <div class="policy-card">
+        <div class="policy-header">
+            <h1>Return & Refund Policy</h1>
+            <div class="underline"></div>
+        </div>
+
+        <div class="policy-content">
+            <p>At SmartStore, we value our customers and strive to provide a seamless shopping experience. If you are
+                not entirely satisfied with your purchase, we're here to help.</p>
+
+            <h4 class="section-title"><i class="fas fa-calendar-check"></i> 7-Day Return Window</h4>
+            <p>You have <strong>7 working days</strong> from the date of delivery to initiate a return request for most
+                items. Items must be returned in their original condition, unused, and with all original tags and
+                packaging intact.</p>
+
+            <h4 class="section-title"><i class="fas fa-shield-alt"></i> Eligible Items for Return</h4>
+            <ul class="policy-list">
+                <li>Products with manufacturing defects.</li>
+                <li>Products damaged during transit.</li>
+                <li>Wrong item delivered (incorrect size, color, or model).</li>
+                <li>Items that do not match the description on our website.</li>
+            </ul>
+
+            <h4 class="section-title"><i class="fas fa-ban"></i> Non-Returnable Items</h4>
+            <p>For hygiene and safety reasons, certain categories are non-returnable:</p>
+            <ul class="policy-list">
+                <li>Personal care products and innerwear.</li>
+                <li>Perishable goods like food and flowers.</li>
+                <li>Customized or personalized products.</li>
+                <li>Digital products (e-books, software keys).</li>
+            </ul>
+
+            <div class="highlight-box">
+                <p><i class="fas fa-info-circle me-2"></i> Note: A small processing fee may apply for returns initiated
+                    due to "Change of Mind".</p>
+            </div>
+
+            <h4 class="section-title"><i class="fas fa-undo"></i> Refund Process</h4>
+            <p>Once we receive your returned item, our team will inspect it and notify you of the status. If approved,
+                we will initiate a refund to your original payment method (Credit Card/UPI) or into your SmartStore
+                wallet.</p>
+            <p>For Cash on Delivery (COD) orders, refunds are typically processed via bank transfer or store credit.</p>
+
+            <h4 class="section-title"><i class="fas fa-headset"></i> Need Help?</h4>
+            <p>If you have any questions regarding our return policy, please feel free to reach out to our support team
+                at <a href="mailto:support@smartecommerce.com">support@smartecommerce.com</a> or visit our <a
+                    href="{{ url_for('contact') }}">Contact Us</a> page.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -400,7 +400,7 @@ class Product:
             AND p.id != %s
             AND p.is_active = TRUE
             AND p.stock > 0
-            ORDER BY RANDOM()
+            ORDER BY random()
             LIMIT %s
         """
         return execute_dict_query(query, (product_id, product_id, limit), fetch_all=True) or []

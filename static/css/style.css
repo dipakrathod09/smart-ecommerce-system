@@ -252,6 +252,16 @@ h6 {
     background-color: white;
 }
 
+.form-select {
+    cursor: pointer;
+    color: var(--dark-color);
+}
+
+.form-select option {
+    color: var(--dark-color);
+    padding: 10px;
+}
+
 /* ===================================================================
    TABLES
    ================================================================ */

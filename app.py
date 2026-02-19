@@ -176,6 +176,12 @@ def contact():
     return render_template('contact.html')
 
 
+@app.route('/return-policy')
+def return_policy():
+    """Return policy page"""
+    return render_template('return_policy.html')
+
+
 # ===================================================================
 # UTILITY ROUTES
 # ===================================================================

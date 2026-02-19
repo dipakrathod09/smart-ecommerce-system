@@ -1,5 +1,73 @@
 {% extends 'base.html' %}
 {% block title %}Order History - Smart E-Commerce{% endblock %}
+
+{% block extra_css %}
+<style>
+    .btn-cancel-order {
+        background: linear-gradient(135deg, #ff4757 0%, #ff6b81 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 0.35rem 0.75rem;
+        font-size: 0.8rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+
+    .btn-cancel-order:hover {
+        background: linear-gradient(135deg, #e84141 0%, #ff5272 100%);
+        color: white;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(255, 71, 87, 0.35);
+    }
+
+    .action-btns {
+        display: flex;
+        gap: 0.4rem;
+        align-items: center;
+    }
+
+    .cancel-info-popover {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        color: #dc3545;
+        font-size: 0.75rem;
+        cursor: pointer;
+    }
+
+    .cancel-info-popover:hover {
+        text-decoration: underline;
+    }
+
+    .btn-return-order {
+        background: linear-gradient(135deg, #f0932b 0%, #ffbe76 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 0.35rem 0.75rem;
+        font-size: 0.8rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+
+    .btn-return-order:hover {
+        background: linear-gradient(135deg, #e67e22 0%, #f39c12 100%);
+        color: white;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(240, 147, 43, 0.35);
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <h2><i class="fas fa-receipt"></i> My Order History</h2>
 
@@ -20,8 +88,8 @@
             {% for order in orders %}
             <tr>
                 <td><strong>{{ order.order_number }}</strong></td>
-                <td>{{ order.ordered_at.strftime('%d %b %Y') }}</td>
-                <td>₹{{ "%.2f"|format(order.total_amount) }}</td>
+                <td>{{ order.ordered_at | datetime_format('%d %b %Y') }}</td>
+                <td>{{ order.total_amount | currency }}</td>
                 <td>
                     {% if order.order_status == 'Delivered' %}
                     <span class="badge bg-success">{{ order.order_status }}</span>
@@ -29,27 +97,144 @@
                     <span class="badge bg-info">{{ order.order_status }}</span>
                     {% elif order.order_status == 'Cancelled' %}
                     <span class="badge bg-danger">{{ order.order_status }}</span>
+                    {% if order.cancel_reason %}
+                    <br>
+                    <small class="cancel-info-popover" data-bs-toggle="tooltip" data-bs-placement="bottom"
+                        title="{{ order.cancel_reason }}">
+                        <i class="fas fa-info-circle"></i> View reason
+                    </small>
+                    {% endif %}
+                    {% elif order.order_status == 'Returned' %}
+                    <span class="badge bg-secondary">{{ order.order_status }}</span>
+                    {% if order.return_reason %}
+                    <br>
+                    <small class="cancel-info-popover" data-bs-toggle="tooltip" data-bs-placement="bottom"
+                        title="{{ order.return_reason }}">
+                        <i class="fas fa-info-circle"></i> View reason
+                    </small>
+                    {% endif %}
                     {% else %}
                     <span class="badge bg-warning text-dark">{{ order.order_status }}</span>
                     {% endif %}
                 </td>
                 <td>
-                    {% if order.payment_status == 'Success' %}
+                    {% if order.payment_method == 'COD' %}
+                    <span class="badge bg-info">Processing</span>
+                    {% elif order.payment_status == 'Success' %}
                     <span class="badge bg-success">Paid</span>
                     {% else %}
                     <span class="badge bg-warning">{{ order.payment_status or 'Pending' }}</span>
                     {% endif %}
                 </td>
                 <td>
-                    <a href="{{ url_for('order.order_detail', order_id=order.id) }}" class="btn btn-sm btn-primary">
-                        <i class="fas fa-eye"></i> View
-                    </a>
+                    <div class="action-btns">
+                        <a href="{{ url_for('order.order_detail', order_id=order.id) }}" class="btn btn-sm btn-primary">
+                            <i class="fas fa-eye"></i> View
+                        </a>
+                        {% if order.order_status not in ['Cancelled', 'Delivered', 'Returned'] %}
+                        <form action="{{ url_for('order.cancel_order', order_id=order.id) }}" method="POST"
+                            onsubmit="return confirm('Are you sure you want to cancel this order?');"
+                            style="display:inline;">
+                            <input type="hidden" name="cancel_reason" value="Cancelled by user">
+                            <button type="submit" class="btn-cancel-order">
+                                <i class="fas fa-times-circle"></i> Cancel
+                            </button>
+                        </form>
+                        {% endif %}
+                        {% if order.is_returnable %}
+                        <button type="button" class="btn-return-order" data-bs-toggle="modal"
+                            data-bs-target="#returnPolicyModal" data-order-id="{{ order.id }}"
+                            data-order-number="{{ order.order_number }}">
+                            <i class="fas fa-undo"></i> Return
+                        </button>
+                        {% endif %}
+                    </div>
                 </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 </div>
+
+<!-- Return Policy Modal -->
+<div class="modal fade" id="returnPolicyModal" tabindex="-1" aria-labelledby="returnPolicyModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
+            <form id="returnOrderForm" action="" method="POST">
+                <div class="modal-header border-bottom-0 pt-4 px-4">
+                    <h5 class="modal-title fw-bold" id="returnPolicyModalLabel">
+                        <i class="fas fa-undo-alt text-warning me-2"></i> Return Request
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body px-4 pb-4">
+                    <div class="alert alert-info border-0 rounded-3 mb-4">
+                        <div class="d-flex">
+                            <i class="fas fa-info-circle mt-1 me-3"></i>
+                            <div>
+                                <p class="mb-0 small fw-bold text-dark">Order: <span id="modalOrderNumber"
+                                        class="text-primary"></span></p>
+                                <p class="mb-0 small">Returns are accepted within 7 days of delivery for eligible items.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="return-form-container bg-light px-4 py-4 rounded-4 border border-light-subtle">
+                        <div class="mb-4">
+                            <label for="return_reason" class="form-label fw-bold text-secondary small text-uppercase">
+                                <i class="fas fa-tag me-2"></i> 1. Select Return Reason
+                            </label>
+                            <select name="return_reason" id="return_reason" class="form-select border-0 shadow-sm ps-3"
+                                style="height: 55px; border-radius: 12px; font-size: 1rem; color: #333; background-color: #fff;"
+                                required>
+                                <option value="" selected disabled>-- Choose a reason for return --</option>
+                                <option value="Damaged product">📦 Damaged product</option>
+                                <option value="Wrong item delivered">🔄 Wrong item delivered</option>
+                                <option value="Defective product">⚠️ Defective product</option>
+                                <option value="Not as described">❓ Not as described</option>
+                                <option value="Quality not as expected">⭐ Quality not as expected</option>
+                                <option value="Other">📝 Other Reason</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-2">
+                            <label for="other_reason" class="form-label fw-bold text-secondary small text-uppercase">
+                                <i class="fas fa-comment-dots me-2"></i> 2. Additional Comments
+                            </label>
+                            <textarea name="other_reason" id="other_reason"
+                                class="form-control border-0 shadow-sm ps-3 pt-3" rows="4"
+                                style="border-radius: 12px; resize: none;" required
+                                placeholder="Please provide more details about the issue..."></textarea>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 p-3 border rounded-3 bg-white small text-muted">
+                        <div class="d-flex mb-2">
+                            <i class="fas fa-shield-alt me-2 text-primary"></i>
+                            <span class="fw-bold">Return Policy:</span>
+                        </div>
+                        <ul class="mb-0 ps-3">
+                            <li>Items must be in original condition with all tags and packaging intact.</li>
+                            <li>Hygiene products, innerwear, and perishable goods are non-returnable.</li>
+                            <li>Return request must be initiated within 7 days of delivery.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0 pb-4 px-4 justify-content-between">
+                    <button type="button" class="btn btn-light px-4 py-2" data-bs-dismiss="modal"
+                        style="border-radius: 12px;">Cancel</button>
+                    <button type="submit" class="btn btn-warning text-white px-5 py-2 fw-bold shadow-sm"
+                        style="border-radius: 12px; background: linear-gradient(135deg, #f0932b 0%, #ffbe76 100%); border: none;">
+                        Submit Return <i class="fas fa-paper-plane ms-2"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 {% else %}
 <div class="alert alert-info">
     <h4><i class="fas fa-info-circle"></i> No orders yet!</h4>
@@ -59,4 +244,37 @@
     </a>
 </div>
 {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.forEach(function (el) {
+            new bootstrap.Tooltip(el);
+        });
+
+        // Handle Return Modal Population
+        var returnModal = document.getElementById('returnPolicyModal');
+        if (returnModal) {
+            returnModal.addEventListener('show.bs.modal', function (event) {
+                var button = event.relatedTarget;
+                var orderId = button.getAttribute('data-order-id');
+                var orderNumber = button.getAttribute('data-order-number');
+
+                // Update modal content
+                var modalOrderNumber = returnModal.querySelector('#modalOrderNumber');
+                var returnForm = returnModal.querySelector('#returnOrderForm');
+
+                modalOrderNumber.textContent = orderNumber;
+                returnForm.action = '/orders/return/' + orderId;
+
+                // Reset inputs
+                returnModal.querySelector('#return_reason').value = '';
+                returnModal.querySelector('#other_reason').value = '';
+            });
+        }
+    });
+</script>
 {% endblock %}
