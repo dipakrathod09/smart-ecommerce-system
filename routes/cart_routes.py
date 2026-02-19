@@ -3,9 +3,9 @@ Cart Routes
 Handles shopping cart operations
 """
 
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify
 from models.cart import Cart
-from models.product import Product
+from services.product_service import ProductService
 from utils.decorators import login_required
 
 # Create blueprint
@@ -41,9 +41,9 @@ def add_to_cart(product_id):
         flash('Invalid quantity.', 'danger')
         return redirect(url_for('product.product_detail', product_id=product_id))
     
-    # Check if product exists and has sufficient stock
-    if not Product.check_stock(product_id, quantity):
-        flash('Insufficient stock or product not available.', 'danger')
+    # Check stock (via Service)
+    if not ProductService.check_stock(product_id, quantity):
+        flash('Insufficient stock.', 'danger')
         return redirect(url_for('product.product_detail', product_id=product_id))
     
     # Add to cart
@@ -73,7 +73,7 @@ def update_cart(cart_id):
     return redirect(url_for('cart.view_cart'))
 
 
-@cart_bp.route('/remove/<int:cart_id>')
+@cart_bp.route('/remove/<int:cart_id>', methods=['POST'])
 @login_required
 def remove_from_cart(cart_id):
     """Remove item from cart"""
@@ -85,7 +85,7 @@ def remove_from_cart(cart_id):
     return redirect(url_for('cart.view_cart'))
 
 
-@cart_bp.route('/clear')
+@cart_bp.route('/clear', methods=['POST'])
 @login_required
 def clear_cart():
     """Clear all items from cart"""

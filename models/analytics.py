@@ -58,7 +58,7 @@ class Analytics:
                    COUNT(*) as order_count,
                    SUM(total_amount) as revenue
             FROM orders
-            WHERE ordered_at >= CURRENT_DATE - INTERVAL '%s days'
+            WHERE ordered_at >= CURRENT_DATE - (%s || ' days')::INTERVAL
             AND order_status != 'Cancelled'
             GROUP BY DATE(ordered_at)
             ORDER BY sale_date ASC
@@ -82,7 +82,7 @@ class Analytics:
                    COUNT(*) as order_count,
                    SUM(total_amount) as revenue
             FROM orders
-            WHERE ordered_at >= CURRENT_DATE - INTERVAL '%s months'
+            WHERE ordered_at >= CURRENT_DATE - (%s || ' months')::INTERVAL
             AND order_status != 'Cancelled'
             GROUP BY DATE_TRUNC('month', ordered_at)
             ORDER BY sale_month ASC

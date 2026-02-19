@@ -26,7 +26,7 @@ class Recommendation:
             list: List of recommended products
         """
         query = """
-            SELECT DISTINCT p.*, c.name as category_name
+            SELECT p.*, c.name as category_name
             FROM products p
             JOIN categories c ON p.category_id = c.id
             WHERE p.category_id IN (
@@ -190,7 +190,7 @@ class Recommendation:
             JOIN orders o ON oi.order_id = o.id
             WHERE p.is_active = TRUE 
             AND p.stock > 0
-            AND o.ordered_at >= CURRENT_DATE - INTERVAL '%s days'
+            AND o.ordered_at >= CURRENT_DATE - (%s || ' days')::INTERVAL
             GROUP BY p.id, c.name
             ORDER BY recent_quantity DESC
             LIMIT %s

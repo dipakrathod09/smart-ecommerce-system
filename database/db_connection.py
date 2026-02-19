@@ -6,6 +6,7 @@ Handles PostgreSQL database connections with connection pooling
 import psycopg2
 from psycopg2 import pool
 from psycopg2 import extras
+from contextlib import contextmanager
 from config import get_config
 import logging
 
@@ -29,7 +30,7 @@ def initialize_connection_pool():
             config = get_config()
             
             # Create connection pool
-            connection_pool = psycopg2.pool.SimpleConnectionPool(
+            connection_pool = psycopg2.pool.ThreadedConnectionPool(
                 config.DB_MIN_CONN,
                 config.DB_MAX_CONN,
                 host=config.DB_HOST,
@@ -125,6 +126,116 @@ def close_all_connections():
         logger.error(f"Error closing connections: {str(e)}")
 
 
+# ===================================================================
+# TRANSACTION SUPPORT
+# ===================================================================
+
+@contextmanager
+def transaction():
+    """
+    Context manager for database transactions.
+    
+    Provides a single connection for multiple queries that are committed
+    together atomically. On any exception the entire transaction is rolled
+    back and the exception re-raised.
+    
+    Usage:
+        with transaction() as conn:
+            execute_in_txn(conn, "INSERT INTO orders ...", (...,))
+            execute_in_txn(conn, "INSERT INTO order_items ...", (...,))
+            # Both are committed together when the block exits cleanly.
+            # If an exception occurs, both are rolled back.
+    """
+    conn = None
+    try:
+        conn = get_db_connection()
+        if not conn:
+            raise RuntimeError("Failed to get database connection for transaction")
+        
+        # psycopg2 connections are NOT in autocommit mode by default,
+        # so every statement is already inside an implicit transaction.
+        # We just need to explicitly commit or rollback.
+        yield conn
+        
+        conn.commit()
+        logger.debug("Transaction committed successfully")
+        
+    except Exception:
+        if conn:
+            conn.rollback()
+            logger.warning("Transaction rolled back due to error")
+        raise  # Re-raise so the caller knows it failed
+        
+    finally:
+        if conn:
+            release_db_connection(conn)
+
+
+def execute_in_txn(conn, query, params=None, fetch_one=False, fetch_all=False):
+    """
+    Execute a query on an existing transactional connection.
+    Does NOT commit or release the connection — the transaction()
+    context manager handles that.
+    
+    Args:
+        conn: Active database connection (from transaction() context manager)
+        query (str): SQL query to execute
+        params (tuple): Query parameters
+        fetch_one (bool): Return single row
+        fetch_all (bool): Return all rows
+        
+    Returns:
+        Query result or rowcount for write operations
+    """
+    cursor = None
+    try:
+        cursor = conn.cursor()
+        cursor.execute(query, params) if params else cursor.execute(query)
+        
+        if fetch_one:
+            return cursor.fetchone()
+        elif fetch_all:
+            return cursor.fetchall()
+        else:
+            return cursor.rowcount
+    finally:
+        if cursor:
+            cursor.close()
+
+
+def execute_dict_in_txn(conn, query, params=None, fetch_one=False, fetch_all=False):
+    """
+    Execute a query on an existing transactional connection, returning
+    results as dictionaries. Does NOT commit or release the connection.
+    
+    Args:
+        conn: Active database connection (from transaction() context manager)
+        query (str): SQL query to execute
+        params (tuple): Query parameters
+        fetch_one (bool): Return single dict
+        fetch_all (bool): Return list of dicts
+        
+    Returns:
+        Dictionary, list of dictionaries, or rowcount for write operations
+    """
+    cursor = None
+    try:
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute(query, params) if params else cursor.execute(query)
+        
+        if fetch_one:
+            row = cursor.fetchone()
+            return dict(row) if row else None
+        elif fetch_all:
+            rows = cursor.fetchall()
+            return [dict(row) for row in rows] if rows else []
+        else:
+            return cursor.rowcount
+    finally:
+        if cursor:
+            cursor.close()
+
+
 def execute_query(query, params=None, fetch_one=False, fetch_all=False, commit=False):
     """
     Execute a database query with automatic connection management
@@ -178,7 +289,8 @@ def execute_query(query, params=None, fetch_one=False, fetch_all=False, commit=F
         # Commit if requested (for INSERT/UPDATE/DELETE)
         if commit:
             conn.commit()
-            result = cursor.rowcount  # Return number of affected rows
+            if result is None:  # Only set rowcount if no fetch was performed
+                result = cursor.rowcount
         
         return result
         

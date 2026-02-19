@@ -135,6 +135,7 @@
                         <form action="{{ url_for('order.cancel_order', order_id=order.id) }}" method="POST"
                             onsubmit="return confirm('Are you sure you want to cancel this order?');"
                             style="display:inline;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <input type="hidden" name="cancel_reason" value="Cancelled by user">
                             <button type="submit" class="btn-cancel-order">
                                 <i class="fas fa-times-circle"></i> Cancel
@@ -162,6 +163,7 @@
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
             <form id="returnOrderForm" action="" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="modal-header border-bottom-0 pt-4 px-4">
                     <h5 class="modal-title fw-bold" id="returnPolicyModalLabel">
                         <i class="fas fa-undo-alt text-warning me-2"></i> Return Request

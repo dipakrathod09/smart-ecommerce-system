@@ -4,14 +4,28 @@ Handles user and admin login, registration, and logout
 """
 
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash
+from urllib.parse import urlparse, urljoin
 from models.user import User
 from models.admin import Admin
+from services.user_service import UserService
+from extensions import limiter
+from utils.validators import validate_email, validate_phone, validate_password
+
+
+def is_safe_url(target):
+    """Validate that the redirect target is safe (same-origin, relative URL only)."""
+    if not target:
+        return False
+    ref_url = urlparse(request.host_url)
+    test_url = urlparse(urljoin(request.host_url, target))
+    return test_url.scheme in ('http', 'https') and ref_url.netloc == test_url.netloc
 
 # Create blueprint
 auth_bp = Blueprint('auth', __name__)
 
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
+@limiter.limit("3 per hour")
 def register():
     """User registration"""
     # Redirect if already logged in
@@ -34,13 +48,21 @@ def register():
             flash('Passwords do not match.', 'danger')
             return render_template('auth/register.html')
         
-        if len(password) < 6:
-            flash('Password must be at least 6 characters long.', 'danger')
+        if not validate_password(password):
+            flash('Password must be at least 8 chars with uppercase, lowercase, digit, and special char.', 'danger')
+            return render_template('auth/register.html')
+            
+        if not validate_email(email):
+            flash('Invalid email format.', 'danger')
+            return render_template('auth/register.html')
+            
+        if not validate_phone(phone):
+            flash('Invalid phone number (must be 10 digits).', 'danger')
             return render_template('auth/register.html')
         
         # Register user
         try:
-            user = User.register(full_name, email, password, phone)
+            user = UserService.register_user(full_name, email, password, phone)
             
             if user:
                 flash('Registration successful! Please login.', 'success')
@@ -49,13 +71,15 @@ def register():
                 flash('Email already exists. Please use a different email.', 'danger')
                 return render_template('auth/register.html')
         except Exception as e:
-            flash(f'Registration failed: {str(e)}', 'danger')
+            # flash(f'Registration failed: {str(e)}', 'danger') # DON'T EXPOSE EXCEPTIONS
+            flash('Registration failed. Please try again later.', 'danger')
             return render_template('auth/register.html')
     
     return render_template('auth/register.html')
 
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
+@limiter.limit("5 per minute")
 def login():
     """User login"""
     # Redirect if already logged in
@@ -71,7 +95,8 @@ def login():
             return render_template('auth/login.html')
         
         try:
-            user = User.login(email, password)
+            # Authenticate via Service
+            user = UserService.authenticate_user(email, password)
             
             if user:
                 # Set session variables
@@ -84,9 +109,9 @@ def login():
                 
                 flash(f'Welcome back, {user["full_name"]}!', 'success')
                 
-                # Redirect to next page if specified, otherwise dashboard
+                # Redirect to next page if specified and safe, otherwise dashboard
                 next_page = request.args.get('next')
-                if next_page:
+                if next_page and is_safe_url(next_page):
                     return redirect(next_page)
                 return redirect(url_for('user.dashboard'))
 
@@ -112,13 +137,15 @@ def login():
             flash('Invalid email or password.', 'danger')
             return render_template('auth/login.html')
         except Exception as e:
-            flash(f'Login failed: {str(e)}', 'danger')
+            # flash(f'Login failed: {str(e)}', 'danger') # DON'T EXPOSE EXCEPTIONS
+            flash('An error occurred during login. Please try again later.', 'danger')
             return render_template('auth/login.html')
     
     return render_template('auth/login.html')
 
 
 @auth_bp.route('/admin-login', methods=['GET', 'POST'])
+@limiter.limit("5 per minute")
 def admin_login():
     """Admin login"""
     # Redirect if already logged in as admin
@@ -152,7 +179,8 @@ def admin_login():
                 flash('Invalid username or password.', 'danger')
                 return render_template('auth/admin_login.html')
         except Exception as e:
-            flash(f'Admin login failed: {str(e)}', 'danger')
+            # flash(f'Admin login failed: {str(e)}', 'danger') # DON'T EXPOSE EXCEPTIONS
+            flash('Admin login failed. Please try again later.', 'danger')
             return render_template('auth/admin_login.html')
     
     return render_template('auth/admin_login.html')

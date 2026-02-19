@@ -1,2 +1,0 @@
-"""populate_db.py"""
-

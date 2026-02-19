@@ -5,9 +5,12 @@ Handles user dashboard and profile management
 
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash
 from models.user import User
-from models.order import Order
+from models.user import User
+from services.order_service import OrderService
 from models.recommendation import Recommendation
 from utils.decorators import login_required
+from utils.validators import validate_phone, validate_pincode, validate_password
+from services.user_service import UserService
 
 # Create blueprint
 user_bp = Blueprint('user', __name__)
@@ -23,7 +26,7 @@ def dashboard():
     recommendations = Recommendation.get_hybrid_recommendations(user_id, limit=8)
     
     # Get recent orders
-    recent_orders = Order.get_user_orders(user_id, page=1, per_page=5)
+    recent_orders = OrderService.get_user_orders(user_id, page=1, per_page=5)
     
     return render_template('user/dashboard.html',
                          recommendations=recommendations,
@@ -43,6 +46,14 @@ def profile():
         city = request.form.get('city')
         state = request.form.get('state')
         pincode = request.form.get('pincode')
+        
+        if not validate_phone(phone):
+            flash('Invalid phone number (must be 10 digits).', 'danger')
+            return redirect(url_for('user.profile'))
+            
+        if not validate_pincode(pincode):
+            flash('Invalid pincode (must be 6 digits).', 'danger')
+            return redirect(url_for('user.profile'))
         
         if User.update_profile(user_id, full_name, phone, address, city, state, pincode):
             # Update session name if changed
@@ -78,12 +89,12 @@ def change_password():
             flash('New passwords do not match.', 'danger')
             return redirect(url_for('user.change_password'))
         
-        if len(new_password) < 6:
-            flash('New password must be at least 6 characters.', 'danger')
+        if not validate_password(new_password):
+            flash('Password must be at least 8 chars with uppercase, lowercase, digit, and special char.', 'danger')
             return redirect(url_for('user.change_password'))
         
         # Update password
-        if User.update_password(user_id, current_password, new_password):
+        if UserService.change_password(user_id, current_password, new_password):
             flash('Password changed successfully!', 'success')
             return redirect(url_for('user.dashboard'))
         else:

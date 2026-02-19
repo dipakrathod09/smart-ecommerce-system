@@ -1,2 +1,0 @@
-Orders: ['id', 'user_id', 'order_number', 'total_amount', 'order_status', 'shipping_address', 'shipping_city', 'shipping_state', 'shipping_pincode', 'contact_phone', 'ordered_at', 'updated_at', 'cancel_reason', 'cancelled_at', 'return_reason', 'returned_at']
-Payments: ['id', 'order_id', 'transaction_id', 'payment_method', 'amount', 'payment_status', 'card_last_four', 'upi_id', 'payment_date', 'updated_at']

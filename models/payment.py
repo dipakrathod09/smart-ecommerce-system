@@ -48,9 +48,7 @@ class Payment:
             )
             
             if result and result['payment_status'] == 'Success':
-                # Update order status
-                from models.order import Order
-                Order.update_status(order_id, 'Confirmed')
+                # Order status update moved to OrderService.finalize_order
                 logger.info(f"Payment successful: {transaction_id}")
             else:
                 logger.warning(f"Payment failed: {transaction_id}")

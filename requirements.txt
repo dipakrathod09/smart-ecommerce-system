@@ -41,3 +41,6 @@ Pillow==11.1.0
 
 # Debug Toolbar — for development-time debugging of SQL, requests, templates
 flask-debugtoolbar==0.14.1
+
+# Rate Limiting — for protecting login endpoints
+Flask-Limiter==3.5.0

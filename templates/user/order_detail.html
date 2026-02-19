@@ -92,6 +92,7 @@
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
             <form id="returnOrderForm" action="" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="modal-header border-bottom-0 pt-4 px-4">
                     <h5 class="modal-title fw-bold" id="returnPolicyModalLabel">
                         <i class="fas fa-undo-alt text-warning me-2"></i> Return Request

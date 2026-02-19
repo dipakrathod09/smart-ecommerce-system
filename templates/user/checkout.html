@@ -5,8 +5,11 @@
 <div class="row">
     <div class="col-md-8">
         <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="card mb-3">
-                <div class="card-header"><h5>Shipping Details</h5></div>
+                <div class="card-header">
+                    <h5>Shipping Details</h5>
+                </div>
                 <div class="card-body">
                     <div class="mb-3">
                         <label class="form-label">Address</label>
@@ -19,13 +22,15 @@
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">State</label>
-                            <input type="text" class="form-control" name="state" value="{{ user.state or '' }}" required>
+                            <input type="text" class="form-control" name="state" value="{{ user.state or '' }}"
+                                required>
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label">PIN Code</label>
-                            <input type="text" class="form-control" name="pincode" value="{{ user.pincode or '' }}" required>
+                            <input type="text" class="form-control" name="pincode" value="{{ user.pincode or '' }}"
+                                required>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Phone</label>
@@ -34,12 +39,15 @@
                     </div>
                 </div>
             </div>
-            <button type="submit" class="btn btn-primary btn-lg">Continue to Payment <i class="fas fa-arrow-right"></i></button>
+            <button type="submit" class="btn btn-primary btn-lg">Continue to Payment <i
+                    class="fas fa-arrow-right"></i></button>
         </form>
     </div>
     <div class="col-md-4">
         <div class="card">
-            <div class="card-header"><h5>Order Summary</h5></div>
+            <div class="card-header">
+                <h5>Order Summary</h5>
+            </div>
             <div class="card-body">
                 <p>Total Items: {{ cart_items|length }}</p>
                 <h4>Total: ₹{{ "%.2f"|format(cart_total) }}</h4>

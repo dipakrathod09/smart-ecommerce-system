@@ -68,6 +68,7 @@
             </div>
             <div class="card-body">
                 <form method="POST" action="{{ url_for('admin.update_order_status', order_id=order.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <select name="status" class="form-select mb-3">
                         <option value="Pending" {% if order.order_status=='Pending' %}selected{% endif %}>Pending
                         </option>

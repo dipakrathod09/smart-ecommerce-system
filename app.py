@@ -4,14 +4,61 @@ This is the main Flask application file that initializes and runs the server
 """
 
 from flask import Flask, render_template, session, redirect, url_for
+from flask.json.provider import DefaultJSONProvider
+from flask_wtf.csrf import CSRFProtect
 from config import get_config
+from decimal import Decimal
+from datetime import date, datetime
 import os
+
+
+# ── Custom JSON provider for PostgreSQL types ────────────────────
+class CustomJSONProvider(DefaultJSONProvider):
+    """Handle Decimal and date types returned by PostgreSQL queries."""
+    def default(self, o):
+        if isinstance(o, Decimal):
+            return float(o)
+        if isinstance(o, (date, datetime)):
+            return o.isoformat()
+        return super().default(o)
+
 
 # Initialize Flask app
 app = Flask(__name__)
+app.json_provider_class = CustomJSONProvider
+app.json = CustomJSONProvider(app)
 
 # Load configuration
 app.config.from_object(get_config())
+
+# Enable CSRF protection globally
+csrf = CSRFProtect(app)
+
+# Initialize Rate Limiter
+from extensions import limiter
+limiter.init_app(app)
+
+
+# ===================================================================
+# SECURITY HEADERS
+# ===================================================================
+
+@app.after_request
+def add_security_headers(response):
+    """Add security headers to response"""
+    csp = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://code.jquery.com; "
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
+        "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; "
+        "img-src 'self' data:; "
+        "connect-src 'self';"
+    )
+    response.headers['Content-Security-Policy'] = csp
+    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    return response
 
 # ===================================================================
 # IMPORT AND REGISTER BLUEPRINTS (Routes)
@@ -131,13 +178,13 @@ def forbidden(e):
 def index():
     """Home page - shows featured products and categories"""
     try:
-        from models.product import Product
+        from services.product_service import ProductService
         from models.category import Category
         from models.recommendation import Recommendation
         from models.wishlist import Wishlist
         
         # Get featured products (latest 8 products)
-        featured_products = Product.get_featured_products(limit=8)
+        featured_products = ProductService.get_featured_products(limit=8)
         
         # Get all active categories
         categories = Category.get_all_active_categories()
@@ -182,23 +229,6 @@ def return_policy():
     return render_template('return_policy.html')
 
 
-# ===================================================================
-# UTILITY ROUTES
-# ===================================================================
-
-@app.route('/test-db')
-def test_db():
-    """Test database connection (Remove in production!)"""
-    try:
-        from database.db_connection import get_db_connection
-        conn = get_db_connection()
-        if conn:
-            conn.close()
-            return "Database connection successful! ✓"
-        return "Database connection failed! ✗"
-    except Exception as e:
-        return f"Error: {str(e)}"
-
 
 # ===================================================================
 # APPLICATION STARTUP
@@ -226,17 +256,21 @@ def ensure_admin_exists():
             # No admin exists, create default admin
             app.logger.info("No admin account found. Creating default admin...")
             
+            default_username = os.environ.get('DEFAULT_ADMIN_USERNAME', 'admin')
+            default_password = os.environ.get('DEFAULT_ADMIN_PASSWORD', 'admin123')
+            default_email = os.environ.get('DEFAULT_ADMIN_EMAIL', 'admin@smartecommerce.com')
+            
             admin = Admin.create_admin(
-                username='admin',
-                password='admin123',
-                email='admin@smartecommerce.com',
+                username=default_username,
+                password=default_password,
+                email=default_email,
                 full_name='System Administrator',
                 is_super_admin=True
             )
             
             if admin:
                 app.logger.info("✓ Default admin account created successfully")
-                app.logger.info("  Username: admin | Password: admin123")
+                app.logger.info(f"  Username: {default_username} (change password immediately!)")
             else:
                 app.logger.warning("Failed to create default admin account")
         else:

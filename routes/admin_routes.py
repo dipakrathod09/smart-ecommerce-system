@@ -8,9 +8,9 @@ import os
 from werkzeug.utils import secure_filename
 from models.admin import Admin
 from models.category import Category
-from models.product import Product
+from services.product_service import ProductService
+from services.order_service import OrderService
 from models.user import User
-from models.order import Order
 from models.analytics import Analytics
 from utils.decorators import admin_required
 
@@ -33,7 +33,7 @@ def dashboard():
     low_stock = Analytics.get_low_stock_products(threshold=10)
     
     # Get recent orders
-    recent_orders = Order.get_all_orders(page=1, per_page=5)
+    recent_orders = OrderService.get_all_orders(page=1, per_page=5)
     
     return render_template('admin/dashboard.html',
                          stats=stats,
@@ -107,7 +107,7 @@ def manage_products():
             # But for now we rely on the file upload. 
             # If no file uploaded, image_url is None (db default or null)
             
-            if Product.create(category_id, name, description, price, stock, brand, image_url):
+            if ProductService.create_product(category_id, name, description, price, stock, brand, image_url):
                 flash('Product added successfully!', 'success')
             else:
                 flash('Failed to add product.', 'danger')
@@ -129,14 +129,14 @@ def manage_products():
             if image_url:
                 update_kwargs['image_url'] = image_url
             
-            if Product.update(product_id, **update_kwargs):
+            if ProductService.update_product(product_id, **update_kwargs):
                 flash('Product updated successfully!', 'success')
             else:
                 flash('Failed to update product.', 'danger')
         
         return redirect(url_for('admin.manage_products'))
     
-    products = Product.get_all(page=page, per_page=20)
+    products = ProductService.get_products(page=page, per_page=20)
     categories = Category.get_all_active_categories()
     
     return render_template('admin/products.html',
@@ -157,7 +157,7 @@ def add_product():
 @admin_required
 def edit_product(product_id):
     """Edit product form"""
-    product = Product.get_by_id(product_id)
+    product = ProductService.get_product_by_id(product_id)
     if not product:
         flash('Product not found.', 'danger')
         return redirect(url_for('admin.manage_products'))
@@ -182,7 +182,7 @@ def manage_users():
 def manage_orders():
     """Manage orders"""
     page = request.args.get('page', 1, type=int)
-    orders = Order.get_all_orders(page=page, per_page=20)
+    orders = OrderService.get_all_orders(page=page, per_page=20)
     
     return render_template('admin/orders.html',
                          orders=orders,
@@ -195,7 +195,13 @@ def update_order_status(order_id):
     """Update order status"""
     new_status = request.form.get('status')
     
-    if Order.update_status(order_id, new_status):
+    # Whitelist validation — only allow known statuses
+    allowed = current_app.config.get('ORDER_STATUSES', [])
+    if new_status not in allowed:
+        flash(f'Invalid status. Allowed: {", ".join(allowed)}', 'danger')
+        return redirect(url_for('admin.manage_orders'))
+    
+    if OrderService.update_order_status(order_id, new_status):
         flash('Order status updated!', 'success')
     else:
         flash('Failed to update status.', 'danger')
@@ -203,7 +209,7 @@ def update_order_status(order_id):
     return redirect(url_for('admin.manage_orders'))
 
 
-@admin_bp.route('/user/toggle-status/<int:user_id>')
+@admin_bp.route('/user/toggle-status/<int:user_id>', methods=['POST'])
 @admin_required
 def toggle_user_status(user_id):
     """Activate/deactivate user"""

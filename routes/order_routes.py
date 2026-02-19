@@ -4,11 +4,12 @@ Handles order placement, history, and tracking
 """
 
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash
-from models.order import Order
+from services.order_service import OrderService
 from models.cart import Cart
 from models.user import User
-from models.payment import Payment
+from models.payment import Payment # Keeping for now if needed, but OrderService.get_order_details handles payment fetching
 from utils.decorators import login_required
+from utils.validators import validate_phone, validate_pincode
 
 order_bp = Blueprint('order', __name__)
 
@@ -27,38 +28,82 @@ def checkout():
         return redirect(url_for('product.list_products'))
     
     if request.method == 'POST':
-        # Get shipping details from form
-        shipping_address = request.form.get('address')
-        shipping_city = request.form.get('city')
-        shipping_state = request.form.get('state')
-        shipping_pincode = request.form.get('pincode')
-        contact_phone = request.form.get('phone')
+        # Get and strip shipping details from form
+        shipping_address = (request.form.get('address') or '').strip()
+        shipping_city = (request.form.get('city') or '').strip()
+        shipping_state = (request.form.get('state') or '').strip()
+        shipping_pincode = (request.form.get('pincode') or '').strip()
+        contact_phone = (request.form.get('phone') or '').strip()
         
-        # Validate required fields
-        if not all([shipping_address, shipping_city, shipping_state, shipping_pincode, contact_phone]):
-            flash('All shipping details are required.', 'danger')
-            return redirect(url_for('order.checkout'))
+        # ── Server-side validation ────────────────────────────────
+        errors = []
         
-        # Calculate total
-        cart_total = Cart.get_cart_total(user_id)
+        # Required-field check
+        if not shipping_address:
+            errors.append('Shipping address is required.')
+        elif len(shipping_address) < 5:
+            errors.append('Address must be at least 5 characters.')
+        elif len(shipping_address) > 500:
+            errors.append('Address must be under 500 characters.')
         
-        # Create order
-        order = Order.create_order(
-            user_id, cart_total, shipping_address,
-            shipping_city, shipping_state, shipping_pincode, contact_phone
-        )
+        if not shipping_city:
+            errors.append('City is required.')
+        elif not shipping_city.replace(' ', '').isalpha():
+            errors.append('City must contain only letters.')
+        elif len(shipping_city) > 50:
+            errors.append('City must be under 50 characters.')
+        
+        if not shipping_state:
+            errors.append('State is required.')
+        elif not shipping_state.replace(' ', '').isalpha():
+            errors.append('State must contain only letters.')
+        elif len(shipping_state) > 50:
+            errors.append('State must be under 50 characters.')
+        
+        if not validate_pincode(shipping_pincode):
+            errors.append('Pincode must be exactly 6 digits.')
+        
+        if not validate_phone(contact_phone):
+            errors.append('Phone must be exactly 10 digits.')
+        
+        if errors:
+            for error in errors:
+                flash(error, 'danger')
+            # Re-render form with existing values preserved
+            cart_total = Cart.get_cart_total(user_id)
+            user = User.get_by_id(user_id)
+            return render_template('user/checkout.html',
+                                 cart_items=cart_items,
+                                 cart_total=cart_total,
+                                 user=user,
+                                 form_data={
+                                     'address': shipping_address,
+                                     'city': shipping_city,
+                                     'state': shipping_state,
+                                     'pincode': shipping_pincode,
+                                     'phone': contact_phone
+                                 })
+        
+        # ── Validation passed — prepare shipping data ─────────────
+        shipping_data = {
+            'address': shipping_address,
+            'city': shipping_city,
+            'state': shipping_state,
+            'pincode': shipping_pincode,
+            'phone': contact_phone
+        }
+
+        # Create order via Service
+        order = OrderService.create_order(user_id, shipping_data)
         
         if order:
-            # Add order items from cart
-            Order.add_order_items(order['id'], cart_items)
-            
             # Store order ID in session for payment
             session['pending_order_id'] = order['id']
             
             flash('Order created successfully! Please complete payment.', 'success')
             return redirect(url_for('payment.select_method'))
         else:
-            flash('Failed to create order. Please try again.', 'danger')
+            flash('Failed to create order. Please check stock or try again.', 'danger')
             return redirect(url_for('order.checkout'))
     
     # GET request - show checkout form
@@ -78,7 +123,7 @@ def order_history():
     user_id = session['user_id']
     page = request.args.get('page', 1, type=int)
     
-    orders = Order.get_user_orders(user_id, page=page, per_page=10)
+    orders = OrderService.get_user_orders(user_id, page=page, per_page=10)
     
     return render_template('user/orders.html', 
                          orders=orders,
@@ -89,46 +134,29 @@ def order_history():
 @login_required
 def order_detail(order_id):
     """View order details"""
-    order = Order.get_by_id(order_id)
+    order = OrderService.get_order_details_for_user(order_id, session['user_id'])
     
-    # Security check - ensure order belongs to logged-in user
-    if not order or order['user_id'] != session['user_id']:
-        flash('Order not found.', 'danger')
+    if not order:
+        flash('Order not found or unauthorized.', 'danger')
         return redirect(url_for('order.order_history'))
-    
-    # Get order items
-    order_items = Order.get_order_items(order_id)
-    
-    # Get payment details
-    payment = Payment.get_by_order_id(order_id)
     
     return render_template('user/order_detail.html',
                          order=order,
-                         order_items=order_items,
-                         payment=payment)
+                         order_items=order.get('items', []),
+                         payment=order.get('payment'))
 
 
 @order_bp.route('/cancel/<int:order_id>', methods=['POST'])
 @login_required
 def cancel_order(order_id):
     """Cancel an order"""
-    order = Order.get_by_id(order_id)
+    # Cancel order via Service
+    success, message = OrderService.cancel_order(order_id, session['user_id'], 'User Request')
     
-    # Security check - ensure order belongs to logged-in user
-    if not order or order['user_id'] != session['user_id']:
-        flash('Order not found.', 'danger')
-        return redirect(url_for('order.order_history'))
-    
-    # Check if order can be cancelled
-    if order['order_status'] in ['Delivered', 'Cancelled']:
-        flash('This order cannot be cancelled.', 'warning')
-        return redirect(url_for('order.order_history'))
-    
-    # Update order status to Cancelled
-    if Order.update_status(order_id, 'Cancelled'):
-        flash(f'Order #{order["order_number"]} has been cancelled successfully.', 'success')
+    if success:
+        flash(message, 'success')
     else:
-        flash('Failed to cancel order. Please try again.', 'danger')
+        flash(message, 'danger')
     
     return redirect(url_for('order.order_history'))
 
@@ -137,35 +165,12 @@ def cancel_order(order_id):
 @login_required
 def return_order(order_id):
     """Return an order"""
-    order = Order.get_by_id(order_id)
+    # Return order via Service
+    success, message = OrderService.return_order(order_id, session['user_id'], final_reason)
     
-    # Security check - ensure order belongs to logged-in user
-    if not order or order['user_id'] != session['user_id']:
-        flash('Order not found.', 'danger')
-        return redirect(url_for('order.order_history'))
-    
-    # Check if order can be returned (must be Delivered and within 7 days)
-    if not order.get('is_returnable'):
-        flash('This order is not eligible for return (must be within 7 days of delivery).', 'warning')
-        return redirect(url_for('order.order_history'))
-    
-    return_reason = request.form.get('return_reason')
-    other_reason = request.form.get('other_reason')
-
-    # Combine selection and detailed text
-    if return_reason and other_reason:
-        final_reason = f"[{return_reason}] {other_reason}"
+    if success:
+        flash(message, 'success')
     else:
-        final_reason = return_reason or other_reason
-
-    if not final_reason:
-        flash('Please provide a reason for return.', 'warning')
-        return redirect(url_for('order.order_history'))
-    
-    # Update order status to Returned
-    if Order.return_order(order_id, final_reason):
-        flash(f'Return request for Order #{order["order_number"]} has been submitted successfully.', 'success')
-    else:
-        flash('Failed to process return request. Please try again.', 'danger')
+        flash(message, 'danger')
     
     return redirect(url_for('order.order_history'))

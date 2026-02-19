@@ -4,7 +4,7 @@ Handles product listing, search, filtering, and details
 """
 
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
-from models.product import Product
+from services.product_service import ProductService
 from models.category import Category
 from models.recommendation import Recommendation
 from models.wishlist import Wishlist
@@ -25,7 +25,7 @@ def list_products():
     sort_by = request.args.get('sort_by', 'created_at')
     sort_order = request.args.get('sort_order', 'DESC')
     
-    products = Product.get_all(
+    products = ProductService.get_products(
         page=page, 
         per_page=12, 
         category_id=category_id, 
@@ -36,7 +36,7 @@ def list_products():
         sort_order=sort_order
     )
     
-    total_products = Product.get_total_count(
+    total_products = ProductService.get_total_count(
         category_id=category_id,
         search_term=search_term
     )
@@ -64,14 +64,14 @@ def list_products():
 @product_bp.route('/<int:product_id>')
 def product_detail(product_id):
     """Product detail page"""
-    product = Product.get_by_id(product_id)
+    product = ProductService.get_product_by_id(product_id)
     
     if not product:
         flash('Product not found.', 'danger')
         return redirect(url_for('product.list_products'))
     
     # Get related products from same category
-    related_products = Product.get_related_products(
+    related_products = ProductService.get_related_products(
         product_id,
         limit=4
     )
@@ -111,5 +111,5 @@ def search_suggestions():
     if not query:
         return jsonify([])
         
-    suggestions = Product.get_search_suggestions(query)
+    suggestions = ProductService.get_search_suggestions(query)
     return jsonify(suggestions)

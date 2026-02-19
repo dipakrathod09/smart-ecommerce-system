@@ -12,6 +12,8 @@ DROP TABLE IF EXISTS products CASCADE;
 DROP TABLE IF EXISTS categories CASCADE;
 DROP TABLE IF EXISTS admin CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
+DROP TABLE IF EXISTS wishlists CASCADE;
+DROP TABLE IF EXISTS reviews CASCADE;
 
 -- ===================================================================
 -- TABLE 1: USERS
@@ -152,6 +154,14 @@ CREATE TABLE orders (
     shipping_state VARCHAR(50) NOT NULL,
     shipping_pincode VARCHAR(10) NOT NULL,
     contact_phone VARCHAR(15) NOT NULL,
+    
+    -- Cancellation tracking
+    cancel_reason TEXT,
+    cancelled_at TIMESTAMP,
+    
+    -- Return tracking
+    return_reason TEXT,
+    returned_at TIMESTAMP,
     
     ordered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

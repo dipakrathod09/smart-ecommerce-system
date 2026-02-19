@@ -5,7 +5,7 @@ Handles payment method selection and processing (simulated)
 
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash
 from models.payment import Payment
-from models.order import Order
+from services.order_service import OrderService
 from models.cart import Cart
 from utils.decorators import login_required
 
@@ -42,7 +42,7 @@ def select_method():
             return render_template('payment/upi_payment.html', order_id=order_id)
     
     # GET request - show method selection
-    order = Order.get_by_id(order_id)
+    order = OrderService.get_order_by_id(order_id)
     return render_template('payment/select_method.html', order=order)
 
 
@@ -58,7 +58,7 @@ def process_payment():
         return redirect(url_for('cart.view_cart'))
     
     # Get order details
-    order = Order.get_by_id(order_id)
+    order = OrderService.get_order_by_id(order_id)
     
     if not order:
         flash('Order not found.', 'danger')
@@ -85,6 +85,9 @@ def process_payment():
     )
     
     if payment and payment['payment_status'] == 'Success':
+        # Finalize order (Update status + Decrement Stock)
+        OrderService.finalize_order(order_id)
+        
         # Clear cart after successful payment
         Cart.clear_cart(session['user_id'])
         

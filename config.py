@@ -5,6 +5,10 @@ Contains all application settings and configurations
 
 import os
 from datetime import timedelta
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 class Config:
     """Base configuration class"""
@@ -13,8 +17,9 @@ class Config:
     # FLASK SETTINGS
     # ===================================================================
     
-    # Secret key for session encryption (CHANGE THIS IN PRODUCTION!)
-    SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production-2025'
+    # Secret key for session encryption — MUST be set in .env or environment
+    # Application will crash on startup if this is missing (intentional safety measure)
+    SECRET_KEY = os.environ['SECRET_KEY']
     
     # Session configuration
     SESSION_COOKIE_NAME = 'smart_ecommerce_session'
@@ -26,12 +31,12 @@ class Config:
     # DATABASE SETTINGS
     # ===================================================================
     
-    # PostgreSQL connection details
-    DB_HOST = 'localhost'
-    DB_PORT = '5432'
-    DB_NAME = 'smart_ecommerce_db'
-    DB_USER = 'postgres'
-    DB_PASSWORD = os.environ.get('DB_PASSWORD', '1234')  # Set DB_PASSWORD env var in production!
+    # PostgreSQL connection details — loaded from .env
+    DB_HOST = os.environ.get('DB_HOST', 'localhost')
+    DB_PORT = os.environ.get('DB_PORT', '5432')
+    DB_NAME = os.environ.get('DB_NAME', 'smart_ecommerce_db')
+    DB_USER = os.environ.get('DB_USER', 'postgres')
+    DB_PASSWORD = os.environ.get('DB_PASSWORD', '')
     
     # Connection pool settings
     DB_MIN_CONN = 1
@@ -140,16 +145,18 @@ class ProductionConfig(Config):
     DEBUG = False
     TESTING = False
     
-    # In production, these should come from environment variables
-    SECRET_KEY = os.environ.get('SECRET_KEY')
+    # SECRET_KEY is already enforced by the base Config class
     DB_PASSWORD = os.environ.get('DB_PASSWORD')
+    SESSION_COOKIE_SECURE = True  # HTTPS only in production
 
 
 class TestingConfig(Config):
     """Testing environment configuration"""
     DEBUG = True
     TESTING = True
+    SECRET_KEY = 'test-secret-key-not-for-production'  # Fixed key for test determinism
     DB_NAME = 'smart_ecommerce_test_db'
+    WTF_CSRF_ENABLED = False
 
 
 # Configuration dictionary

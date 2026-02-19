@@ -7,15 +7,28 @@
 // DOCUMENT READY
 // ===================================================================
 
-$(document).ready(function() {
+$(document).ready(function () {
     console.log('Smart E-Commerce System Loaded');
-    
+
+    // ── Global CSRF token for all AJAX requests ─────────────────
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    if (csrfToken) {
+        $.ajaxSetup({
+            beforeSend: function (xhr, settings) {
+                // Only add CSRF for same-origin, state-changing methods
+                if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                    xhr.setRequestHeader('X-CSRFToken', csrfToken);
+                }
+            }
+        });
+    }
+
     // Initialize tooltips
     initializeTooltips();
-    
+
     // Initialize form validations
     initializeFormValidations();
-    
+
     // Auto-dismiss alerts
     autoDismissAlerts();
 });
@@ -63,18 +76,29 @@ function hideLoading(buttonElement) {
  * Show toast notification
  */
 function showToast(message, type = 'info') {
-    const toast = `
-        <div class="toast align-items-center text-white bg-${type} border-0" role="alert">
-            <div class="d-flex">
-                <div class="toast-body">${message}</div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-            </div>
-        </div>
-    `;
-    
-    // Append toast to body or toast container
-    $('body').append(toast);
-    $('.toast').toast('show');
+    // Build toast via DOM APIs to prevent XSS (no raw HTML injection)
+    const toast = document.createElement('div');
+    toast.className = `toast align-items-center text-white bg-${type} border-0`;
+    toast.setAttribute('role', 'alert');
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'd-flex';
+
+    const body = document.createElement('div');
+    body.className = 'toast-body';
+    body.textContent = message;  // Safe — never interpreted as HTML
+
+    const closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.className = 'btn-close btn-close-white me-2 m-auto';
+    closeBtn.setAttribute('data-bs-dismiss', 'toast');
+
+    wrapper.appendChild(body);
+    wrapper.appendChild(closeBtn);
+    toast.appendChild(wrapper);
+
+    document.body.appendChild(toast);
+    new bootstrap.Toast(toast).show();
 }
 
 /**
@@ -95,7 +119,7 @@ function confirmAction(message, callback) {
  */
 function initializeTooltips() {
     const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    tooltipTriggerList.map(function(tooltipTriggerEl) {
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
         return new bootstrap.Tooltip(tooltipTriggerEl);
     });
 }
@@ -121,8 +145,8 @@ function initializeFormValidations() {
  * Auto-dismiss alerts after 5 seconds
  */
 function autoDismissAlerts() {
-    setTimeout(function() {
-        $('.alert').fadeOut('slow', function() {
+    setTimeout(function () {
+        $('.alert').fadeOut('slow', function () {
             $(this).remove();
         });
     }, 5000);
@@ -140,11 +164,11 @@ function addToCartAjax(productId, quantity = 1) {
         url: `/cart/add/${productId}`,
         method: 'POST',
         data: { quantity: quantity },
-        success: function(response) {
+        success: function (response) {
             showToast('Product added to cart!', 'success');
             updateCartCount();
         },
-        error: function(xhr) {
+        error: function (xhr) {
             showToast('Failed to add product to cart.', 'danger');
         }
     });
@@ -157,7 +181,7 @@ function updateCartCount() {
     $.ajax({
         url: '/cart/count',
         method: 'GET',
-        success: function(response) {
+        success: function (response) {
             $('.cart-count').text(response.count);
             if (response.count > 0) {
                 $('.cart-count').show();
@@ -172,7 +196,7 @@ function updateCartCount() {
  * Remove from cart with confirmation
  */
 function removeFromCart(cartId) {
-    confirmAction('Are you sure you want to remove this item?', function() {
+    confirmAction('Are you sure you want to remove this item?', function () {
         window.location.href = `/cart/remove/${cartId}`;
     });
 }
@@ -189,12 +213,12 @@ function liveSearch(searchTerm) {
         $('#search-results').hide();
         return;
     }
-    
+
     $.ajax({
         url: '/products/search',
         method: 'GET',
         data: { q: searchTerm },
-        success: function(response) {
+        success: function (response) {
             displaySearchResults(response.products);
         }
     });
@@ -213,7 +237,7 @@ function displaySearchResults(products) {
             <p class="mb-1 text-muted small">${product.category_name}</p>
         </a>
     `).join('');
-    
+
     $('#search-results').html(resultsHtml).show();
 }
 
@@ -244,7 +268,7 @@ function lazyLoadImages() {
             }
         });
     });
-    
+
     images.forEach(img => imageObserver.observe(img));
 }
 
@@ -259,7 +283,7 @@ function incrementQuantity(inputId) {
     const input = $(`#${inputId}`);
     const currentValue = parseInt(input.val()) || 0;
     const maxValue = parseInt(input.attr('max')) || 999;
-    
+
     if (currentValue < maxValue) {
         input.val(currentValue + 1);
     }
@@ -272,7 +296,7 @@ function decrementQuantity(inputId) {
     const input = $(`#${inputId}`);
     const currentValue = parseInt(input.val()) || 0;
     const minValue = parseInt(input.attr('min')) || 1;
-    
+
     if (currentValue > minValue) {
         input.val(currentValue - 1);
     }
@@ -311,12 +335,12 @@ function validatePincode(pincode) {
  */
 function checkPasswordStrength(password) {
     let strength = 0;
-    
+
     if (password.length >= 6) strength++;
     if (password.match(/[a-z]/) && password.match(/[A-Z]/)) strength++;
     if (password.match(/\d/)) strength++;
     if (password.match(/[^a-zA-Z\d]/)) strength++;
-    
+
     return strength; // 0: weak, 1-2: medium, 3-4: strong
 }
 
@@ -337,7 +361,7 @@ function confirmDelete(itemName, deleteUrl) {
  * Toggle user status
  */
 function toggleUserStatus(userId) {
-    confirmAction('Are you sure you want to change this user\'s status?', function() {
+    confirmAction('Are you sure you want to change this user\'s status?', function () {
         window.location.href = `/admin/user/toggle-status/${userId}`;
     });
 }
@@ -353,10 +377,10 @@ function applyPriceFilter() {
     const minPrice = $('#min-price').val();
     const maxPrice = $('#max-price').val();
     const currentUrl = new URL(window.location.href);
-    
+
     if (minPrice) currentUrl.searchParams.set('min_price', minPrice);
     if (maxPrice) currentUrl.searchParams.set('max_price', maxPrice);
-    
+
     window.location.href = currentUrl.toString();
 }
 
@@ -421,12 +445,12 @@ function getFromLocalStorage(key) {
 function exportTableToCSV(tableId, filename = 'export.csv') {
     const table = document.getElementById(tableId);
     const rows = Array.from(table.querySelectorAll('tr'));
-    
+
     const csv = rows.map(row => {
         const cells = Array.from(row.querySelectorAll('td, th'));
         return cells.map(cell => `"${cell.textContent.trim()}"`).join(',');
     }).join('\n');
-    
+
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -446,13 +470,13 @@ function exportTableToCSV(tableId, filename = 'export.csv') {
 function printSection(sectionId) {
     const section = document.getElementById(sectionId);
     const printWindow = window.open('', '', 'height=600,width=800');
-    
+
     printWindow.document.write('<html><head><title>Print</title>');
     printWindow.document.write('<link rel="stylesheet" href="/static/css/style.css">');
     printWindow.document.write('</head><body>');
     printWindow.document.write(section.innerHTML);
     printWindow.document.write('</body></html>');
-    
+
     printWindow.document.close();
     printWindow.print();
 }
@@ -463,21 +487,21 @@ function printSection(sectionId) {
 
 // Search input with debounce
 let searchTimeout;
-$('#search-input').on('input', function() {
+$('#search-input').on('input', function () {
     clearTimeout(searchTimeout);
     const searchTerm = $(this).val();
     searchTimeout = setTimeout(() => liveSearch(searchTerm), 300);
 });
 
 // Close search results when clicking outside
-$(document).on('click', function(e) {
+$(document).on('click', function (e) {
     if (!$(e.target).closest('#search-container').length) {
         $('#search-results').hide();
     }
 });
 
 // Back to top button
-$(window).scroll(function() {
+$(window).scroll(function () {
     if ($(this).scrollTop() > 200) {
         $('#back-to-top').fadeIn();
     } else {
@@ -485,7 +509,7 @@ $(window).scroll(function() {
     }
 });
 
-$('#back-to-top').click(function() {
+$('#back-to-top').click(function () {
     $('html, body').animate({ scrollTop: 0 }, 800);
     return false;
 });
@@ -495,13 +519,13 @@ $('#back-to-top').click(function() {
 // AUTOCOMPLETE SEARCH
 // ===================================================================
 
-$(document).ready(function() {
+$(document).ready(function () {
     const searchInput = $('#searchInput');
     const searchSuggestions = $('#searchSuggestions');
     let debounceTimer;
 
     // Listen for input
-    searchInput.on('input', function() {
+    searchInput.on('input', function () {
         clearTimeout(debounceTimer);
         const query = $(this).val().trim();
 
@@ -521,10 +545,10 @@ $(document).ready(function() {
             url: '/products/search/suggestions',
             method: 'GET',
             data: { q: query },
-            success: function(response) {
+            success: function (response) {
                 renderSuggestions(response);
             },
-            error: function() {
+            error: function () {
                 searchSuggestions.hide();
             }
         });
@@ -551,14 +575,14 @@ $(document).ready(function() {
     }
 
     // Hide suggestions when clicking outside
-    $(document).on('click', function(e) {
+    $(document).on('click', function (e) {
         if (!$(e.target).closest('.search-form').length) {
             searchSuggestions.hide();
         }
     });
-    
+
     // Show suggestions again if input has value and is focused
-    searchInput.on('focus', function() {
+    searchInput.on('focus', function () {
         if ($(this).val().trim().length >= 2) {
             // Re-fetch or just show if we cached? For now re-fetch is safer
             fetchSuggestions($(this).val().trim());

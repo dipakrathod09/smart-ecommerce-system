@@ -7,24 +7,37 @@
     <div class="col-md-8">
         <table class="table">
             <thead>
-                <tr><th>Product</th><th>Price</th><th>Quantity</th><th>Subtotal</th><th>Action</th></tr>
+                <tr>
+                    <th>Product</th>
+                    <th>Price</th>
+                    <th>Quantity</th>
+                    <th>Subtotal</th>
+                    <th>Action</th>
+                </tr>
             </thead>
             <tbody>
                 {% for item in cart_items %}
                 <tr>
-                    <td><img src="{{ item.image_url or url_for('static', filename='images/placeholder.jpg') }}" 
-                             width="50" class="me-2">{{ item.name }}</td>
+                    <td><img src="{{ item.image_url or url_for('static', filename='images/placeholder.jpg') }}"
+                            width="50" class="me-2">{{ item.name }}</td>
                     <td>₹{{ "%.2f"|format(item.price) }}</td>
                     <td>
-                        <form method="POST" action="{{ url_for('cart.update_cart', cart_id=item.cart_id) }}" class="d-inline">
-                            <input type="number" name="quantity" value="{{ item.quantity }}" 
-                                   min="1" max="{{ item.stock }}" class="form-control form-control-sm" 
-                                   style="width: 70px;" onchange="this.form.submit()">
+                        <form method="POST" action="{{ url_for('cart.update_cart', cart_id=item.cart_id) }}"
+                            class="d-inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="number" name="quantity" value="{{ item.quantity }}" min="1"
+                                max="{{ item.stock }}" class="form-control form-control-sm" style="width: 70px;"
+                                onchange="this.form.submit()">
                         </form>
                     </td>
                     <td>₹{{ "%.2f"|format(item.subtotal) }}</td>
-                    <td><a href="{{ url_for('cart.remove_from_cart', cart_id=item.cart_id) }}" 
-                           class="btn btn-sm btn-danger">Remove</a></td>
+                    <td>
+                        <form method="POST" action="{{ url_for('cart.remove_from_cart', cart_id=item.cart_id) }}"
+                            class="d-inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-sm btn-danger">Remove</button>
+                        </form>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -32,7 +45,9 @@
     </div>
     <div class="col-md-4">
         <div class="card">
-            <div class="card-header bg-primary text-white"><h5>Order Summary</h5></div>
+            <div class="card-header bg-primary text-white">
+                <h5>Order Summary</h5>
+            </div>
             <div class="card-body">
                 <h4>Total: ₹{{ "%.2f"|format(cart_total) }}</h4>
                 <a href="{{ url_for('order.checkout') }}" class="btn btn-success w-100 mt-3">
@@ -43,6 +58,7 @@
     </div>
 </div>
 {% else %}
-<div class="alert alert-info">Your cart is empty. <a href="{{ url_for('product.list_products') }}">Start shopping!</a></div>
+<div class="alert alert-info">Your cart is empty. <a href="{{ url_for('product.list_products') }}">Start shopping!</a>
+</div>
 {% endif %}
 {% endblock %}

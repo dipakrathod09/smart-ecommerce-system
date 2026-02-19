@@ -3,7 +3,7 @@ User Model
 Handles user registration, authentication, and profile management
 """
 
-import bcrypt
+
 from database.db_connection import execute_query, execute_dict_query
 import logging
 from datetime import datetime
@@ -14,74 +14,16 @@ logger = logging.getLogger(__name__)
 class User:
     """User model for customer accounts"""
     
-    @staticmethod
-    def hash_password(password):
-        """
-        Hash a password using bcrypt
-        
-        Args:
-            password (str): Plain text password
-            
-        Returns:
-            str: Hashed password
-        """
-        # Generate salt and hash password
-        salt = bcrypt.gensalt()
-        hashed = bcrypt.hashpw(password.encode('utf-8'), salt)
-        return hashed.decode('utf-8')
+
     
     
     @staticmethod
-    def verify_password(plain_password, hashed_password):
+    def create(full_name, email, password_hash, phone=None, address=None, 
+                 city=None, state=None, pincode=None):
         """
-        Verify a password against its hash
-        
-        Args:
-            plain_password (str): Password to verify
-            hashed_password (str): Hashed password from database
-            
-        Returns:
-            bool: True if password matches, False otherwise
+        Create a new user in database
         """
         try:
-            return bcrypt.checkpw(
-                plain_password.encode('utf-8'),
-                hashed_password.encode('utf-8')
-            )
-        except Exception as e:
-            logger.error(f"Password verification error: {str(e)}")
-            return False
-    
-    
-    @staticmethod
-    def register(full_name, email, password, phone=None, address=None, 
-                city=None, state=None, pincode=None):
-        """
-        Register a new user
-        
-        Args:
-            full_name (str): User's full name
-            email (str): User's email address
-            password (str): User's password (will be hashed)
-            phone (str): Phone number (optional)
-            address (str): Street address (optional)
-            city (str): City (optional)
-            state (str): State (optional)
-            pincode (str): PIN code (optional)
-            
-        Returns:
-            dict: User data if successful, None otherwise
-        """
-        try:
-            # Check if email already exists
-            if User.email_exists(email):
-                logger.warning(f"Registration failed: Email {email} already exists")
-                return None
-            
-            # Hash password
-            password_hash = User.hash_password(password)
-            
-            # Insert user into database
             query = """
                 INSERT INTO users (full_name, email, password_hash, phone, 
                                  address, city, state, pincode)
@@ -96,64 +38,29 @@ class User:
             )
             
             if result:
-                logger.info(f"User registered successfully: {email}")
+                logger.info(f"User created: {email}")
                 return result
-            else:
-                logger.error("User registration failed")
-                return None
+            return None
                 
         except Exception as e:
-            logger.error(f"Error registering user: {str(e)}")
+            logger.error(f"Error creating user: {str(e)}")
             return None
     
     
     @staticmethod
-    def login(email, password):
+    def get_user_with_credentials(email):
         """
-        Authenticate a user
-        
-        Args:
-            email (str): User's email
-            password (str): User's password
-            
-        Returns:
-            dict: User data if authentication successful, None otherwise
+        Get user by email including password hash (for internal auth only)
         """
         try:
-            # Get user by email
             query = """
                 SELECT id, full_name, email, password_hash, is_active
                 FROM users
                 WHERE email = %s
             """
-            
-            user = execute_dict_query(query, (email,), fetch_one=True)
-            
-            if not user:
-                logger.warning(f"Login failed: User not found - {email}")
-                return None
-            
-            # Check if account is active
-            if not user['is_active']:
-                logger.warning(f"Login failed: Account inactive - {email}")
-                return None
-            
-            # Verify password
-            if User.verify_password(password, user['password_hash']):
-                # Update last login time
-                User.update_last_login(user['id'])
-                
-                # Remove password hash from returned data
-                del user['password_hash']
-                
-                logger.info(f"User logged in successfully: {email}")
-                return user
-            else:
-                logger.warning(f"Login failed: Invalid password - {email}")
-                return None
-                
+            return execute_dict_query(query, (email,), fetch_one=True)
         except Exception as e:
-            logger.error(f"Error during login: {str(e)}")
+            logger.error(f"Error fetching credentials: {str(e)}")
             return None
     
     
@@ -285,49 +192,21 @@ class User:
     
     
     @staticmethod
-    def update_password(user_id, current_password, new_password):
-        """
-        Update user password
-        
-        Args:
-            user_id (int): User ID
-            current_password (str): Current password for verification
-            new_password (str): New password to set
-            
-        Returns:
-            bool: True if successful, False otherwise
-        """
+    def get_password_hash(user_id):
+        """Get password hash for a user"""
+        query = "SELECT password_hash FROM users WHERE id = %s"
+        result = execute_query(query, (user_id,), fetch_one=True)
+        return result[0] if result else None
+
+    @staticmethod
+    def update_password_hash(user_id, new_password_hash):
+        """Update password hash"""
         try:
-            # Get current password hash
-            query = "SELECT password_hash FROM users WHERE id = %s"
-            result = execute_query(query, (user_id,), fetch_one=True)
-            
-            if not result:
-                return False
-            
-            # Verify current password
-            if not User.verify_password(current_password, result[0]):
-                logger.warning(f"Password update failed: Incorrect current password")
-                return False
-            
-            # Hash new password
-            new_password_hash = User.hash_password(new_password)
-            
-            # Update password
-            update_query = "UPDATE users SET password_hash = %s WHERE id = %s"
-            update_result = execute_query(
-                update_query,
-                (new_password_hash, user_id),
-                commit=True
-            )
-            
-            if update_result and update_result > 0:
-                logger.info(f"Password updated for user ID: {user_id}")
-                return True
-            return False
-            
+            query = "UPDATE users SET password_hash = %s WHERE id = %s"
+            result = execute_query(query, (new_password_hash, user_id), commit=True)
+            return result > 0 if result else False
         except Exception as e:
-            logger.error(f"Error updating password: {str(e)}")
+            logger.error(f"Error updating password hash: {str(e)}")
             return False
     
     

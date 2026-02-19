@@ -31,3 +31,8 @@ logs/
 # Sensitive
 config_local.py
 secrets.json
+
+# Test output
+results*.txt
+test_output*.txt
+test_results*.txt
