@@ -16,7 +16,8 @@
             <div class="card-body">
                 <h6 class="text-uppercase">Recent Orders</h6>
                 <h2>{{ recent_orders|length }}</h2>
-                <a href="{{ url_for('order.order_history') }}" class="text-white">View All <i class="fas fa-arrow-right"></i></a>
+                <a href="{{ url_for('order.order_history') }}" class="text-white">View All <i
+                        class="fas fa-arrow-right"></i></a>
             </div>
         </div>
     </div>
@@ -25,7 +26,8 @@
             <div class="card-body">
                 <h6 class="text-uppercase">Cart Items</h6>
                 <h2>{{ cart_count }}</h2>
-                <a href="{{ url_for('cart.view_cart') }}" class="text-white">View Cart <i class="fas fa-arrow-right"></i></a>
+                <a href="{{ url_for('cart.view_cart') }}" class="text-white">View Cart <i
+                        class="fas fa-arrow-right"></i></a>
             </div>
         </div>
     </div>
@@ -34,7 +36,8 @@
             <div class="card-body">
                 <h6 class="text-uppercase">Profile</h6>
                 <p class="mb-0">{{ user_info.user_email }}</p>
-                <a href="{{ url_for('user.profile') }}" class="text-white">Edit Profile <i class="fas fa-arrow-right"></i></a>
+                <a href="{{ url_for('user.profile') }}" class="text-white">Edit Profile <i
+                        class="fas fa-arrow-right"></i></a>
             </div>
         </div>
     </div>
@@ -48,14 +51,14 @@
         {% for product in recommendations %}
         <div class="col-lg-3 col-md-4 col-sm-6">
             <div class="card h-100 shadow-sm">
-                <img src="{{ product.image_url or url_for('static', filename='images/placeholder.jpg') }}" 
-                     class="card-img-top" alt="{{ product.name }}" style="height: 180px; object-fit: cover;">
+                <img src="{{ product.image_url or url_for('static', filename='images/placeholder.jpg') }}"
+                    class="card-img-top" alt="{{ product.name }}" style="height: 180px; object-fit: cover;">
                 <div class="card-body">
                     <h6 class="card-title">{{ product.name }}</h6>
                     <p class="text-muted small">{{ product.category_name }}</p>
                     <h5 class="text-primary">₹{{ "%.2f"|format(product.price) }}</h5>
-                    <a href="{{ url_for('product.product_detail', product_id=product.id) }}" 
-                       class="btn btn-primary btn-sm w-100">View Details</a>
+                    <a href="{{ url_for('product.product_detail', product_id=product.id) }}"
+                        class="btn btn-primary btn-sm w-100">View Details</a>
                 </div>
             </div>
         </div>
@@ -95,8 +98,8 @@
                         {% endif %}
                     </td>
                     <td>
-                        <a href="{{ url_for('order.order_detail', order_id=order.id) }}" 
-                           class="btn btn-sm btn-outline-primary">View</a>
+                        <a href="{{ url_for('order.order_detail', order_id=order.id) }}"
+                            class="btn btn-sm btn-outline-primary">View</a>
                     </td>
                 </tr>
                 {% endfor %}
@@ -106,7 +109,7 @@
 </section>
 {% else %}
 <div class="alert alert-info">
-    <i class="fas fa-info-circle"></i> You haven't placed any orders yet. 
+    <i class="fas fa-info-circle"></i> You haven't placed any orders yet.
     <a href="{{ url_for('product.list_products') }}">Start shopping now!</a>
 </div>
 {% endif %}

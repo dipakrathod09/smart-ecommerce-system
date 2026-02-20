@@ -83,6 +83,30 @@ def delete_category(category_id):
     return redirect(url_for('admin.manage_categories'))
 
 
+@admin_bp.route('/categories/edit/<int:category_id>', methods=['GET', 'POST'])
+@admin_required
+def edit_category(category_id):
+    """Edit category (Separate Page)"""
+    # Get category
+    category = Category.get_by_id(category_id)
+    if not category:
+        flash('Category not found.', 'danger')
+        return redirect(url_for('admin.manage_categories'))
+        
+    if request.method == 'POST':
+        name = request.form.get('name')
+        description = request.form.get('description')
+        is_active = request.form.get('is_active') == 'on'
+        
+        if Category.update(category_id, name=name, description=description, is_active=is_active):
+            flash('Category updated successfully!', 'success')
+            return redirect(url_for('admin.manage_categories'))
+        else:
+            flash('Failed to update category.', 'danger')
+            
+    return render_template('admin/edit_category.html', category=category)
+
+
 @admin_bp.route('/products', methods=['GET', 'POST'])
 @admin_required
 def manage_products():
